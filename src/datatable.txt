@@ -1,0 +1,57 @@
+DT_BasePlayer:
+	m_fFlags
+	m_lifeState
+	m_iHealth
+
+
+DT_BaseAnimating:
+	m_nSequence
+
+
+DT_BaseEntity:
+	m_iTeamNum
+	m_Collision
+	m_angRotation
+
+#if defined(GMOD)
+	m_iMaxHealth
+#endif
+
+
+DT_CollisionProperty:
+	m_vecMins
+	m_vecMaxs
+	m_nSolidType
+	m_usSolidFlags
+
+DT_BaseCombatCharacter:
+	m_hActiveWeapon
+
+DT_BaseCombatWeapon:
+	m_iClip1
+
+DT_LocalActiveWeaponData:
+	m_flNextPrimaryAttack
+
+DT_LocalPlayerExclusive:
+	m_nTickBase
+	m_Local
+
+DT_Local:
+
+#if defined(CSGO)
+	m_aimPunchAngle
+#else
+	m_vecPunchAngle
+#endif
+
+#if defined(L4D) || defined(L4D2)
+DT_TerrorPlayer:
+	m_iMaxHealth
+
+DT_Infected:
+	m_mobRush
+#endif
+
+*:
+	m_vecViewOffset[0]

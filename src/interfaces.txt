@@ -1,0 +1,115 @@
+IPanel vgui2.VGUI_Panel
+
+
+IEngineVGui engine.VEngineVGui
+	unsigned int GetPanel(unsigned int):1
+
+
+ISurface vguimatsurface.VGUI_Surface
+#if defined(VORANGEBOX)
+	void SetColor(int r, int g, int b, int a):11
+	void DrawFilledRect(int x0, int y0, int x1, int y1):12
+	void DrawOutlinedRect(int x0, int y0, int x1, int y1):14
+
+	void SetFont(unsigned long font):17
+	void SetTextColor(int r, int g, int b, int a):19
+	void SetTextPos(int x, int y):20
+	void DrawText(const wchar_t *text, int length, int drawtype):22
+
+	unsigned long CreateFont():66
+	void SetFontGlyphSet(unsigned long font, const char *name, int tall, int weight, int blur, int scanlines, int flags, int mins, int maxs):67
+
+	void GetTextSize(unsigned long font, const wchar_t *text, int &w, int &h):75
+#endif
+
+#if defined(VL4D)
+	void SetColor(int r, int g, int b, int a):11
+	void DrawFilledRect(int x0, int y0, int x1, int y1):12
+	void DrawOutlinedRect(int x0, int y0, int x1, int y1):14
+
+	void SetFont(unsigned long font):17
+	void SetTextColor(int r, int g, int b, int a):19
+	void SetTextPos(int x, int y):20
+	void DrawText(const wchar_t *text, int length, int drawtype):22
+
+	unsigned long CreateFont():63
+	void SetFontGlyphSet(unsigned long font, const char *name, int tall, int weight, int blur, int scanlines, int flags, int mins, int maxs):64
+
+	void GetTextSize(unsigned long font, const wchar_t *text, int &w, int &h):72
+#endif
+
+#if defined(VALIENSWARM)
+	void SetColor(int r, int g, int b, int a):14
+	void DrawFilledRect(int x0, int y0, int x1, int y1):15
+	void DrawOutlinedRect(int x0, int y0, int x1, int y1):17
+
+	void SetFont(unsigned long font):22
+	void SetTextColor(int r, int g, int b, int a):24
+	void SetTextPos(int x, int y):25
+	void DrawText(const wchar_t *text, int length, int drawtype):27
+
+	unsigned long CreateFont():70
+	void SetFontGlyphSet(unsigned long font, const char *name, int tall, int weight, int blur, int scanlines, int flags, int mins, int maxs):71
+
+	void GetTextSize(unsigned long font, const wchar_t *text, int &w, int &h):78
+#endif
+
+
+IEngine engine.VEngineClient
+	void GetScreenSize(int &w, int &h):5
+	bool GetPlayerInfo(int index, player_info &info):8
+	int GetLocalPlayer():12
+	bool IsInGame():26
+
+#if defined(VORANGEBOX)
+	matrix4x4 &WorldToScreen():36
+#else
+	matrix4x4 &WorldToScreen():37
+#endif
+
+
+IEntities client.VClientEntityList
+	Entity *GetEntity(int i):3
+	Entity *GetEntityByHandle(void *h):4
+	int GetMaxEntities():6
+
+
+ITrace engine.EngineTraceClient
+#if defined(VORANGEBOX)
+	void TraceRay(const ray &t, int mask, void *filter, trace &tr):4
+#else
+	void TraceRay(const ray &t, int mask, void *filter, trace &tr):5
+#endif
+
+
+IClient client.VClient
+
+
+IModelInfo engine.VModelInfoClient
+#if defined(VORANGEBOX)
+	void *GetStudiomodel(void *):28
+#else
+	void *GetStudiomodel(void *):30
+#endif
+
+
+
+IMovement client.GameMovement
+	void ProcessMovement(Entity *pl, void *movedata):1
+
+
+IPrediction client.VClientPrediction
+#if defined(VORANGEBOX)
+	void SetupMove(Entity *pl, UserCmd *ucmd, void *movehelper, void *movedata):18
+	void FinishMove(Entity *pl, UserCmd *ucmd, void *movedata):19
+#endif
+
+#if defined(VL4D)
+	void SetupMove(Entity *pl, UserCmd *ucmd, void *movehelper, void *movedata):19
+	void FinishMove(Entity *pl, UserCmd *ucmd, void *movedata):20
+#endif
+
+#if defined(VALIENSWARM)
+	void SetupMove(Entity *pl, UserCmd *ucmd, void *movehelper, void *movedata):20
+	void FinishMove(Entity *pl, UserCmd *ucmd, void *movedata):21
+#endif

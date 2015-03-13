@@ -1,0 +1,209 @@
+extension = ".dll"
+shared 	  = true
+
+
+links =
+{
+	"msvcrt",
+	"kernel32",
+	"user32",
+}
+
+buildoptions =
+{
+	"-std=c++11",
+	"-O2",
+	"-msse2",
+	"-mfpmath=sse",
+	"-masm=intel",
+	"-fno-asynchronous-unwind-tables",
+	"-fno-exceptions",
+	"-fno-ident",
+	"-funsigned-char",
+	"-Wno-pmf-conversions",
+}
+
+linkoptions =
+{
+	"-nostdlib",
+	"-Wl,--exclude-libs,ALL",
+	"-Wl,--version-script=../novis",
+	"-Wl,--image-base=0",
+	"-e_start@12"
+}
+
+
+configurations =
+{
+	l4d2 =
+	{
+		defines =
+		{
+			"VL4D",
+			"L4D2"
+		},
+		links =
+		{
+		},
+	},
+}
+
+
+pp.files.aliasupdate( "dtmgr.cpp", "datatable.txt" )
+
+pp.files.aliasupdate( "sdk.cpp", "interfaces.txt" )
+pp.files.aliasupdate( "sdk.h",   "interfaces.txt" )
+
+pp.files.onopen( function( name, contents )
+	if name == "dtmgr.cpp" then
+		local defs, text = { }, { }
+		local dt = "*"
+
+		for line in io.lines "./src/datatable.txt" do
+			if line:match "#" then
+				table.insert( defs, line )
+				table.insert( text, line )
+			else
+				if line:match "%s*.+%s*:%s*$" then
+					dt = line:match "%s*(.+)%s*:%s*$"
+				elseif line:match "%s*.+%s*$" then
+					local vn = line:match "%s*(.+)%s*$"
+
+					table.insert( defs, string.format( "int %s;", vn:gsub( "[%[%]]", "" ) ) )
+					table.insert( text, string.format( "\t%s = GetOffset(\"%s\", \"%s\");", vn:gsub( "[%[%]]", "" ), dt, vn ) )
+				end
+			end
+		end
+
+		return contents .. string.format( "\n\n\n%s\n\nvoid dtmgr::Map()\n{\n%s\n}", table.concat( defs, '\n' ), table.concat( text, '\n' ) )
+	end
+
+	if name == "sdk.cpp" or name == "sdk.h" then
+		local text = {}
+		local interface
+
+		for line in io.lines "./src/interfaces.txt" do
+			if line:match "#" then
+				table.insert( text[interface].text, { text = line } )
+			else
+				if line:match "%s*%a+%s+[%a%d_]+%s*%.%s*[%a%d_]+%s*$" then
+					local classname, lib, name = line:match "%s*(%a+)%s+([%a%d_]+)%s*%.%s*([%a%d_]+)%s*$"
+
+
+					interface = classname
+
+					text[interface] =
+					{
+						text = {},
+						lib  = lib,
+						name = name
+					}
+				elseif line:match "%s*.+%s*:%s*%d+%s*$" then
+					local func, index = line:match "%s*(.+)%s*:%s*(%d+)%s*$"
+					table.insert( text[interface].text, { func = func, index = index } )
+				end
+			end
+		end
+
+		if name == "sdk.h" then
+			local src = { }
+			for k, v in pairs( text ) do
+				do
+					local stub = { }
+
+					table.insert( stub, string.format( "\nclass %s : public Interface\n{\npublic:\n\t%s()\n\t{\n", k, k ) )
+					table.insert( stub, string.format( "\t\tCreate(\"%s\", \"%s\");\n", v.lib, v.name ) )
+
+					for _, v in pairs( v.text ) do
+						if v.text then
+							table.insert( stub, v.text )
+						else
+							table.insert( stub, string.format( "\t\tLink((void *)&%s::%s, %s);", k, v.func:match ".-%s*([%a%d_]+)%(.+$", v.index ) )
+						end
+					end
+
+					table.insert( stub, "\t}\n\n" )
+					table.insert( src, table.concat( stub, "\n" ) )
+				end
+
+				for _, v in pairs( v.text ) do
+					if v.text then
+						table.insert( src, v.text )
+					else
+						table.insert( src, "\t" .. v.func .. ";" )
+					end
+				end
+
+				table.insert( src, "};\n" )
+			end
+
+			return contents .. table.concat( src, "\n" )
+		end
+
+		if name == "sdk.cpp" then
+			local src = { }
+			for k, v in pairs( text ) do
+				for _, v in pairs( v.text ) do
+					if v.text then
+						table.insert( src, v.text )
+					else
+						local type, rest = v.func:match "(.-)%s*([%a%d_]+%(.+)$"
+						table.insert( src, string.format( "__attribute__((noinline)) %s %s::%s\n{\n\tasm(\"%s\");\n}\n", type, k, rest, ( "nop\\n" ):rep( 10 ) ) )
+					end
+				end
+			end
+
+			return contents .. table.concat( src, "\n" )
+		end
+
+		return contents
+	end
+
+	return contents
+end )
+
+
+pp.register.prefix( 'Q', function( contents )
+	local pattern = { }
+	local bitmask = 0
+
+	local dot = 0
+
+
+	local i = 0
+	for s in contents:gmatch "([^%s]+)" do
+		if s:match "%." then
+			dot = i
+		end
+
+		if not s:match "%?" then
+			pattern[#pattern+1] = s:match "([^%.]+)"
+			bitmask = bit.bor( bitmask, bit.lshift( 1, i ) )
+		end
+
+		i = i + 1
+	end
+
+	local mask = ( "\\x%02X\\x%02X\\x%02X\\x%02X" ):format(
+		bit.band( bitmask, 0xff ),
+		bit.band( bit.rshift( bitmask, 8 ), 0xff ),
+		bit.band( bit.rshift( bitmask, 16 ), 0xff ),
+		bit.band( bit.rshift( bitmask, 24 ), 0xff ) )
+
+	return '((const pattern *)"' .. string.format( "\\x%02X", dot ) .. mask .. ( "\\x%s" ):rep( #pattern ):format( unpack( pattern ) ) .. '")'
+end )
+
+pp.register.declaration( "vfunc", function( macroargs, ret, name, args )
+	local i = macroargs:match "([^,]+)"
+	local t = macroargs:match ".+,(.+)" or "0"
+	local mask = ( ", %s" ):rep( #pp.parse.args( args ) )
+
+	return ( "inline %s %s(%s) { return GetVFunc<%s (__thiscall *)(void *%s)>((void **)this + %s, %s)((void **)this + %s%s); }" ):format(
+		ret, name, args, ret, mask:format( unpack( pp.parse.args( args ):types() ) ), t, i, t, mask:format( unpack( pp.parse.args( args ):names() ) ) )
+end )
+
+pp.register.declaration( "nwvar", function( macroargs, ret, name )
+	local externs = macroargs:tmatch "nw%.(m_%a+%d?)"
+
+	return ( "inline %s &%s() __attribute__((pure)) { %s return *(%s *)((char *)this + (%s)); }" ):format( ret, name, ( #externs > 0 and string.format( "extern int " .. ( "%s, " ):rep( #externs - 1 ) .. "%s;", unpack( externs ) ) or "" ), ret, macroargs:gsub( "nw%.", "" ) )
+end )
