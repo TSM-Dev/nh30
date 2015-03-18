@@ -12,46 +12,29 @@ namespace aimbot
 
 	class BulletFilter
 	{
-	public:
 		Entity *lp, *ent;
 
-		BulletFilter(Entity *a) : lp(a) { };
-
-		inline void against(Entity *a)
+	public:
+		BulletFilter(Entity *newlp) : lp(newlp)
 		{
-			ent = a;
+		}
+
+		inline void against(Entity *newent)
+		{
+			ent = newent;
 		}
 
 
-		virtual bool ShouldHitEntity(Entity *, int) const;
-		virtual int GetTraceType() const;
-	};
-
-	class TargetFilter
-	{
-	public:
-		UserCmd *ucmd;
-		Entity  *lp;
-
-		float best;
-		float rate;
-
-		static int next_shot;
-		static int shot;
-
-		TargetFilter(UserCmd *, Entity *);
-
-		bool better(Entity *, int);
-		void ack();
-
-		static void Next();
+		virtual bool ShouldHitEntity(Entity *ent, int mask) const;
+		virtual int  GetTraceType() const;
 	};
 
 	void RunCommand(UserCmd *ucmd);
-	
-	void Next();
+
 	bool Think(UserCmd *ucmd);
 
 	bool CheckTarget(Entity *lp, Entity *pl);
 	bool BulletTrace(Vector v1, Vector v2, BulletFilter *bf);
+
+	void Next();
 }

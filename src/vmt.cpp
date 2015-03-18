@@ -35,7 +35,7 @@ void VMT::hook(int i, void *imp, void **org)
 {
 	new_vmt[i] = imp;
 
-	if (org)
+	if (org != nullptr)
 	{
 		*org = org_vmt[i];
 	}

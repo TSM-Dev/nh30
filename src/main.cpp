@@ -1,41 +1,32 @@
 #include "main.h"
 
-ITrace 		*enginetrace;
 IClient		*client;
 IEngine		*engine;
 IEntities	*ents;
+ITrace 		*enginetrace;
 IModelInfo	*mdlinfo;
 IMovement	*movement;
 IPrediction	*prediction;
 IEngineVGui *enginevgui;
-
-IPanel		*panel;
 ISurface	*surface;
 
 Globals		*globals;
 
 static bool speedfix[0x1000];
 
-
-declhook(void, PaintTraverse, unsigned int index, bool repaint, bool force)
+declhook(void, Paint, int paintmode)
 {
-	org_PaintTraverse(t, index, repaint, force);
+	org_Paint(t, paintmode);
 
-	static int tpanel = enginevgui->GetPanel(2);
-	if (index != tpanel)
-		return;
-
-	if (engine->IsInGame())
+	if (paintmode & 1 && engine->IsInGame())
 	{
 		hud::DrawESP();
 		hud::DrawCrosshair();
 	}
 }
 
-// static bool speedfix[0x100];
-
-// PØW DÆMØN
-// pøw dæmøn
+// DÆMØN
+// dæmøn
 
 declhook(void, SetViewAngles, Vector &angles)
 {
@@ -120,8 +111,8 @@ declhook(void, SetViewAngles, Vector &angles)
 			if (1 && weapon->GetNextPrimaryFire() > curtime) // menu/autopistol
 				ucmd->buttons.del(IN_ATTACK);
 
-			//if (weapon->GetNextPrimaryFire() <= curtime)
-			//	aimbot::Next();
+			if (weapon->GetNextPrimaryFire() <= curtime)
+				aimbot::Next();
 		}
 
 		if (1)
@@ -170,6 +161,7 @@ extern "C" int __stdcall start(void *, int r, void *)
 		client = new IClient();
 		dtmgr::Start( );
 
+
 #if defined(VORANGEBOX)
 #	if defined(GMOD)
 		globals = **(Globals ***)util::FindPattern(client->GetMethod<void *>(0), 0x100, Q"89 0D .? ? ? ? E8");
@@ -186,24 +178,25 @@ extern "C" int __stdcall start(void *, int r, void *)
 		mdlinfo = new IModelInfo;
 
 		enginetrace = new ITrace;
-		
+
 		movement   = new IMovement;
 		prediction = new IPrediction;
 
-		panel   = new IPanel;
-		surface = new ISurface;
+		surface    = new ISurface;
 		enginevgui = new IEngineVGui;
-		ui::Start();
+		ui::Start( );
 
 #if defined(VORANGEBOX)
 		engine->HookMethod(20, (void *)hooked_SetViewAngles, (void **)&org_SetViewAngles);
-		panel->HookMethod(41, (void *)hooked_PaintTraverse, (void **)&org_PaintTraverse);
 
+		enginevgui->HookMethod(13, (void *)hooked_Paint, (void **)&org_Paint);
 		prediction->HookMethod(17, (void *)hooked_RunCommand, (void **)&org_RunCommand);
-#elif defined(VL4D)
-		engine->HookMethod(20, (void *)hooked_SetViewAngles, (void **)&org_SetViewAngles);
-		panel->HookMethod(41, (void *)hooked_PaintTraverse, (void **)&org_PaintTraverse);
+#endif
 
+#if defined(VL4D)
+		engine->HookMethod(20, (void *)hooked_SetViewAngles, (void **)&org_SetViewAngles);
+
+		enginevgui->HookMethod(14, (void *)hooked_Paint, (void **)&org_Paint);
 		prediction->HookMethod(18, (void *)hooked_RunCommand, (void **)&org_RunCommand);
 #endif
 	}

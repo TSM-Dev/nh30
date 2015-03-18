@@ -25,7 +25,7 @@ void *util::FindPattern(void *start, unsigned int len, const pattern *data)
 		if (g) return (void *)(q + (int)*(unsigned char *)data);
 	}
 
-	return 0;
+	return nullptr;
 }
 
 void *util::FindPattern(const char *l, const pattern *data)
@@ -37,7 +37,7 @@ void *util::FindPattern(const char *l, const pattern *data)
 
 void *util::FindString(void *p, const char *string)
 {
-	char *start, *str = 0;
+	char *start, *str = nullptr;
 
 	for (start = (char *)p; !str; start++)
 	{
@@ -51,7 +51,7 @@ void *util::FindString(void *p, const char *string)
 			return start;
 	}
 
-	return 0;
+	return nullptr;
 }
 
 const wchar_t *util::MakeReadable(const char *s, int &length)
@@ -76,7 +76,7 @@ const wchar_t *util::MakeReadable(const char *s, int &length)
 			if (u)
 			{
 				u = false;
-				*p++ = *s - 32;
+				*p++ = *s - '\32';
 			}
 			else
 			{
@@ -85,7 +85,7 @@ const wchar_t *util::MakeReadable(const char *s, int &length)
 		}
 	}
 
-	*p = 0;
+	*p = '\0';
 	length = p - buf;
 
 	return buf;

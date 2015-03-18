@@ -1,6 +1,3 @@
-IPanel vgui2.VGUI_Panel
-
-
 IEngineVGui engine.VEngineVGui
 	unsigned int GetPanel(unsigned int):1
 

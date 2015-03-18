@@ -37,7 +37,7 @@ int dtmgr::GetOffset(const char *dt, const char *name)
 	{
 		RecvTable *table = nwtable[i];
 
-		if (!table)
+		if (table == nullptr)
 			return 0;
 
 		if (*dt == '*' || strcmp(table->name, dt) == 0)

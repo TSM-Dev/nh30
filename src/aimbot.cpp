@@ -15,20 +15,20 @@ extern int m_fFlags;
 
 int real_flags, next_flags;
 
-void *aimbot::g_movehelper = 0;
+void *aimbot::g_movehelper = nullptr;
 void  aimbot::RunCommand(UserCmd *ucmd)
 {
-	if (!g_movehelper)
+	if (g_movehelper == nullptr)
 		return;
 
 #if defined(VORANGEBOX)
 	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(17), 0x100, Q"89 ? .? ? ? ? E8");
-#elif defined(VL4D)
+#endif
+#if defined(VL4D)
 	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(18), 0x100, Q"89 ? .? ? ? ? E8");
-#elif defined(VALIENSWARM)
+#endif
+#if defined(VALIENSWARM)
 	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(19), 0x100, Q"89 ? .? ? ? ? E8");
-#else
-#	error RunCommand isn't known
 #endif
 
 	Entity *lp = LocalPlayer();
@@ -41,7 +41,7 @@ void  aimbot::RunCommand(UserCmd *ucmd)
 
 	char movedata[0x100] = {0};
 
-	prediction->SetupMove(lp, ucmd, 0, movedata);
+	prediction->SetupMove(lp, ucmd, nullptr, movedata);
 	movement->ProcessMovement(lp, movedata);
 	prediction->FinishMove(lp, ucmd, movedata);
 
@@ -81,15 +81,25 @@ bool aimbot::CheckTarget(Entity *lp, Entity *pl)
 }
 
 
-/*
-inline float RateOf(UserCmd *ucmd, Entity *lp, Entity *pl, int index, bool npc)
+static int shot, next_shot = 0;
+
+void aimbot::Next()
+{
+	next_shot = shot;
+}
+
+inline float RateOf(UserCmd *ucmd, Entity *lp, Entity *pl, int index)
 {
 	using namespace aimbot;
 
-	if (!npc)
-		return 0.1f;
+	switch (2)
+	{
+	case 0:
+	case 1:
 
-	return next_shot >= index ? 1.0f : 0.1f;
+	case 2:
+		return next_shot < index ? 0.1f : 1.0f;
+	}
 
 	//return lp->GetPos().DistTo(pl->GetPos());
 
@@ -98,37 +108,24 @@ inline float RateOf(UserCmd *ucmd, Entity *lp, Entity *pl, int index, bool npc)
 
 	//Vector path;
 	//VectorAngles(pl->GetPos() - lp->GetPos(), path);
-	
+
 	//return path.DistTo(ucmd->viewangles);
 }
 
-static int shot = 0;
-void aimbot::Next()
-{
-	next_shot = shot;
-}
-*/
-
 bool aimbot::Think(UserCmd *ucmd)
 {
-	// shot = 0;
-
 	Entity *lp = LocalPlayer();
-	Entity *t  = 0;
+	Entity *t  = nullptr;
 
+	float best = 3.40282347e+38f;
+	
 
 	Vector aim, tp, sp = lp->GetShootPos();
 	AngleVectors(ucmd->viewangles, aim);
 
-	// float best = 0.0f;
-
-
 	BulletFilter bf(lp);
-	TargetFilter tf(ucmd, lp);
 
-	int maxpl = globals->maxclients();
-
-	for (int i = 1, ignore = engine->GetLocalPlayer(); i <= ents->GetMaxEntities(); i++)
+	for (int i = 1, ignore = engine->GetLocalPlayer(), players = globals->maxclients(); i <= ents->GetMaxEntities(); i++)
 	{
 		if (i == ignore)
 			continue;
@@ -140,7 +137,7 @@ bool aimbot::Think(UserCmd *ucmd)
 
 			if (strcmp(pl->GetNetworkClass()->name, "Infected") && strcmp(pl->GetNetworkClass()->name, "Witch"))
 			{
-				if (i > maxpl)
+				if (i > players)
 					continue;
 
 				if (!CheckTarget(lp, pl))
@@ -158,12 +155,9 @@ bool aimbot::Think(UserCmd *ucmd)
 			if (!pl->SetupBones())
 				continue;
 
-			if (!tf.better(pl, i))
+			float rate = RateOf(ucmd, lp, pl, i);
+			if (rate >= best)
 				continue;
-
-			//float rt = RateOf(ucmd, lp, pl, i, i > maxpl);
-			//if (best != 0.0f && rt >= best)
-			//	continue;
 
 			bf.against(pl);
 
@@ -180,14 +174,11 @@ bool aimbot::Think(UserCmd *ucmd)
 
 					if (BulletTrace(sp, pos, &bf))
 					{
-						//best = rt;
-
 						t  = pl;
 						tp = pos;
 
-						tf.ack();
-
-						//shot = i;
+						best = rate;
+						shot = i;
 
 						next = true;
 					}
@@ -208,18 +199,15 @@ bool aimbot::Think(UserCmd *ucmd)
 
 					if (box->group && box->group != HITGROUP_HEAD)
 					{
-						Vector  pos = pl->GetBoxPos(box);
+						Vector pos = pl->GetBoxPos(box);
 
 						if (BulletTrace(sp, pos, &bf))
 						{
-							//best = rt;
-
 							t  = pl;
 							tp = pos;
 
-							tf.ack();
-
-							//shot = i;
+							best = rate;
+							shot = i;
 
 							break;
 						}
@@ -229,7 +217,7 @@ bool aimbot::Think(UserCmd *ucmd)
 		}
 	}
 
-	if (t)
+	if (t != nullptr)
 	{
 		VectorAngles(tp - sp, ucmd->viewangles);
 
