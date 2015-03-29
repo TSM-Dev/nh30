@@ -30,7 +30,8 @@ const char *Entity::GetClass()
 #if defined(VALIENSWARM)
 	static auto GetClassnameFn = (const char *(__thiscall *)(void *))util::FindPattern("client", Q"56 8B F1 C6 ? ? ? ? ? ? 8B 46");
 #else
-	static auto GetClassnameFn = (const char *(__thiscall *)(void *))util::CalcAbsAddress(util::FindPattern("client", Q"E8 .? ? ? ? 50 68 ? ? ? ? FF 15 ? ? ? ? 83 C4 0C 5F 5E 8B E5"));
+	static auto GetClassnameFn =
+		(const char *(__thiscall *)(void *))util::CalcAbsAddress(util::FindPattern("client", Q"E8 .? ? ? ? 50 68 ? ? ? ? FF 15 ? ? ? ? 83 C4 0C 5F 5E 8B E5"));
 #endif
 
 	return GetClassnameFn(this);
@@ -77,10 +78,21 @@ Entity *Entity::GetActiveWeapon()
 	return ents->GetEntityByHandle(ReadPtr<void *>(this, m_hActiveWeapon));
 }
 
+WeaponInfo *Entity::GetWeaponInfo()
+{
+#if defined(L4D) || defined(L4D2) || defined(CSS) || defined(CSGO)
+	static auto LookupWeaponInfoSlot =
+		(unsigned short (*)(const char *))util::FindPattern("client", Q"55 8B EC 8B 45 08 83 EC 08 85 C0 74 18");
+	static auto GetFileWeaponInfoFromHandle =
+		(WeaponInfo *(*)(unsigned short))util::FindPattern("client", Q"55 8B EC 66 8B 45 08 66 3B 05");
+
+	return GetFileWeaponInfoFromHandle(LookupWeaponInfoSlot(GetClass()));
+#endif
+}
+
 void Interface::Create(const char *bin, const char *name)
 {
 	auto CreateInterface = (void *(*)(const char *, void *))GetProcAddress(GetModuleHandle(bin), "CreateInterface");
-
 
 	char *start = (char *)GetModuleHandle("client");
 
@@ -89,7 +101,7 @@ void Interface::Create(const char *bin, const char *name)
 
 	for (;; start++)
 	{
-		if ((memcmp(start, name, len) | *(start + nul)) == 0)
+		if (memcmp(start, name, len) == 0 && *(start + nul) == '\0')
 			break;
 	}
 

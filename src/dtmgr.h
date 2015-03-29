@@ -4,6 +4,34 @@
 struct RecvProp;
 struct RecvTable;
 
+union RecvProxyResult
+{
+	int   i32;
+	float f32;
+	void  *data;
+};
+
+struct RecvProxyData
+{
+	const RecvProp *recvprop;
+
+	struct
+	{
+		union
+		{
+			float f32;
+			int	  i32;
+			void  *data;
+		};
+
+		int type;
+	}
+	value;
+
+	int	element;
+	int	objectid;
+};
+
 struct RecvProp
 {
 	const char	*name;
@@ -54,5 +82,6 @@ namespace dtmgr
 	void Map();
 	void Lineout(RecvTable *);
 
+	void SetHook(const char *, const char *, void (*)(const RecvProxyData &, void *, RecvProxyResult &));
 	int GetOffset(const char *, const char *);
 }

@@ -1,15 +1,22 @@
 #include <stdlib.h>
+#include <string.h>
 
 // _Znwj
 void * operator new (unsigned int i)
 {
-	return malloc(i);
+	void *p = malloc(i);
+	memset(p, 0, i);
+
+	return p;
 }
 
 // _Znaj
 void * operator new [] (unsigned int i)
 {
-	return malloc(i);
+	void *p = malloc(i);
+	memset(p, 0, i);
+
+	return p;
 }
 
 // _ZdlPv

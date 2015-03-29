@@ -11,9 +11,9 @@ struct stack
 	stack *next;
 	char  *ret;
 
-	template<typename T> inline T arg(unsigned int i)
+	template<typename T> inline T &arg(unsigned int i)
 	{
-		return *(T *)((void **)this + i + 2);
+		return *(T *)((void **)this + i - 1 + 2);
 	}
 };
 

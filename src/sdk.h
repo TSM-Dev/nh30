@@ -198,6 +198,55 @@ struct Globals
 #endif
 };
 
+struct WeaponInfo
+{
+#if defined(CSS)
+	/*
+	inline int CSS_GetPenetration()
+	{
+		return ReadPtr<int>(this, 0x0884);
+	}
+
+	inline int CSS_GetDamage()
+	{
+		return ReadPtr<int>(this, 0x0888);
+	}
+
+	inline float CSS_GetDistance()
+	{
+		return ReadPtr<float>(this, 0x088c);
+	}
+
+	inline float CSS_GetRangeModifier()
+	{
+		return ReadPtr<float>(this, 0x0890);
+	}
+	*/
+#endif
+
+#if defined(L4D2)
+	inline int penetration() const
+	{
+		return ReadPtr<int>(this, 0x09c8);
+	}
+
+	inline int damage() const
+	{
+		return ReadPtr<int>(this, 0x09cc);
+	}
+
+	inline float distance()
+	{
+		return ReadPtr<float>(this, 0x09d0);
+	}
+
+	inline float range_modifier()
+	{
+		return ReadPtr<float>(this, 0x09d4);
+	}
+#endif
+};
+
 struct UserCmd
 {
 private:
@@ -263,12 +312,8 @@ public:
 };
 
 
-
-#define declhook(r, n, args...) void (__thiscall *org_ ## n) (void *, ## args); void __fastcall hooked_ ## n (void *t, void *, ## args)
-
 class NetworkClass;
 class Vector;
-
 
 class Entity
 {
@@ -312,6 +357,7 @@ public:
 
 
 	Entity *GetActiveWeapon();
+	WeaponInfo *GetWeaponInfo();
 
 	nwvar(nw.m_flNextPrimaryAttack)
 		float GetNextPrimaryFire();
@@ -346,11 +392,11 @@ public:
 	vfunc(2,2)	NetworkClass *GetNetworkClass();
 	vfunc(8,2)	bool IsDormant();
 #else
-#if defined(VL4D)
+#  if defined(VL4D)
 	vfunc(11)	Vector &GetPos();
-#else
+#  else
 	vfunc(10)	Vector &GetPos();
-#endif
+#  endif
 
 	vfunc(8,1)	void *GetModel();
 
@@ -385,13 +431,13 @@ public:
 	}
 
 #if defined(CSS) || defined(CSGO)
-#if defined(CSS)
+#  if defined(CSS)
 #	define o_spread 371
-#endif
+#  endif
 
-#if defined(CSGO)
+#  if defined(CSGO)
 #	define o_spread 459
-#endif
+#  endif
 
 
 	vfunc(o_spread)   float GetWeaponCone();
@@ -400,12 +446,12 @@ public:
 	vfunc(o_spread+2) void UpdateAccuracyPenalty();
 #endif
 
-#if defined(VL4D)
+#if defined(L4D) || defined(L4D2)
 	float GetWeaponSpread()
 	{
-#if defined(L4D2)
+#  if defined(L4D2)
 		return ReadPtr<float>(this, 3340);
-#endif
+#  endif
 	}
 #endif
 
@@ -450,9 +496,9 @@ protected:
 	void Link(void *, int);
 
 public:
-	inline void HookMethod(int m, void *h, void **org)
+	inline void SetHook(int m, void *h, void *org)
 	{
-		vmthook->hook(m, h, org);
+		vmthook->hook(m, h, (void **)org);
 	}
 
 	template<typename T>

@@ -76,7 +76,7 @@ const wchar_t *util::MakeReadable(const char *s, int &length)
 			if (u)
 			{
 				u = false;
-				*p++ = *s - '\32';
+				*p++ = *s - 32;
 			}
 			else
 			{
@@ -85,7 +85,7 @@ const wchar_t *util::MakeReadable(const char *s, int &length)
 		}
 	}
 
-	*p = '\0';
+	*p = 0;
 	length = p - buf;
 
 	return buf;

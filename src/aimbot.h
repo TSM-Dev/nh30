@@ -4,11 +4,13 @@
 
 struct UserCmd;
 struct hitbox;
+struct WeaponInfo;
 class  Entity;
 
 namespace aimbot
 {
-	extern void *g_movehelper;
+	extern void *movehelper;
+	extern WeaponInfo *weaponinfo;
 
 	class BulletFilter
 	{
@@ -36,5 +38,6 @@ namespace aimbot
 	bool CheckTarget(Entity *lp, Entity *pl);
 	bool BulletTrace(Vector v1, Vector v2, BulletFilter *bf);
 
+	float RateOf(UserCmd *ucmd, Entity *lp, Entity *pl, int index);
 	void Next();
 }

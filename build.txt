@@ -19,6 +19,7 @@ buildoptions =
 	"-fno-asynchronous-unwind-tables",
 	"-fno-exceptions",
 	"-fno-ident",
+	"-falign-functions=16",
 	"-funsigned-char",
 	"-Wno-pmf-conversions",
 }
@@ -40,13 +41,26 @@ configurations =
 		defines =
 		{
 			"VL4D",
-			"L4D2"
+			"L4D2",
+			"WALLBANG"
 		},
 		links =
 		{
 		},
 	},
 }
+
+
+
+local function tmatch( text, pattern )
+	local t = { }
+
+	for m in text:gmatch( pattern ) do
+		table.insert( t, m )
+	end
+
+	return t
+end
 
 
 pp.files.aliasupdate( "dtmgr.cpp", "datatable.txt" )
@@ -203,7 +217,7 @@ pp.register.declaration( "vfunc", function( macroargs, ret, name, args )
 end )
 
 pp.register.declaration( "nwvar", function( macroargs, ret, name )
-	local externs = macroargs:tmatch "nw%.(m_%a+%d?)"
+	local externs = tmatch( macroargs, "nw%.(m_%a+%d?)" )
 
 	return ( "inline %s &%s() __attribute__((pure)) { %s return *(%s *)((char *)this + (%s)); }" ):format( ret, name, ( #externs > 0 and string.format( "extern int " .. ( "%s, " ):rep( #externs - 1 ) .. "%s;", unpack( externs ) ) or "" ), ret, macroargs:gsub( "nw%.", "" ) )
 end )

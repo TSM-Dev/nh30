@@ -26,7 +26,9 @@ void dtmgr::Lineout(RecvTable *table)
 			}
 
 			if (g)
+			{
 				Lineout(dt);
+			}
 		}
 	}
 }
@@ -37,7 +39,7 @@ int dtmgr::GetOffset(const char *dt, const char *name)
 	{
 		RecvTable *table = nwtable[i];
 
-		if (table == nullptr)
+		if (!table)
 			return 0;
 
 		if (*dt == '*' || strcmp(table->name, dt) == 0)
@@ -55,6 +57,30 @@ int dtmgr::GetOffset(const char *dt, const char *name)
 	}
 
 	return 0;
+}
+
+void dtmgr::SetHook(const char *dt, const char *name, void (*function)(const RecvProxyData &, void *, RecvProxyResult &))
+{
+	for (int i = 0;; i++)
+	{
+		RecvTable *table = nwtable[i];
+
+		if (!table)
+			return;
+
+		if (*dt == '*' || strcmp(table->name, dt) == 0)
+		{
+			for (int j = 0; j < table->iprops; j++)
+			{
+				RecvProp *prop = &table->props[j];
+
+				if (strcmp(prop->name, name) == 0)
+				{
+					prop->proxy = (void *)function;
+				}
+			}
+		}
+	}
 }
 
 void dtmgr::Start()

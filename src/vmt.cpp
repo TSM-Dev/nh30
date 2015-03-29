@@ -25,7 +25,7 @@ VMT::~VMT()
 
 int VMT::getvmtsize()
 {
-	register int i = 0;
+	int i = 0;
 
 	for (; org_vmt[i] && org_vmt[i] < (void *)org_vmt; i++);
 	return i;

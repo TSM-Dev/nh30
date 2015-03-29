@@ -17,7 +17,7 @@ extern int m_nSolidType, m_usSolidFlags;
 
 bool hud::MakeBox(Entity *ent, int &x0, int &y0, int &x1, int &y1)
 {
-	Vector edges[4] =
+	const Vector edges[4] =
 	{
 		Vector(1.0f , 1.0f, 1.0f),
 		Vector(-1.0f, 1.0f, 1.0f),
@@ -36,14 +36,14 @@ bool hud::MakeBox(Entity *ent, int &x0, int &y0, int &x1, int &y1)
 	x1 = minof(int);
 	y1 = minof(int);
 
-	for (int j = 0; j < 4; j++)
+	for (int i = 0; i < 4; i++)
 	{
 		Vector mins2d, maxs2d;
 
-		if ((vec + (mins * edges[j].Rotate(ang))).ToScreen(mins2d) == false)
+		if ((vec + (mins * edges[i].Rotate(ang))).ToScreen(mins2d) == false)
 			return false;
 
-		if ((vec + (maxs * edges[j].Rotate(ang))).ToScreen(maxs2d) == false)
+		if ((vec + (maxs * edges[i].Rotate(ang))).ToScreen(maxs2d) == false)
 			return false;
 
 		x0 = min(x0, min(mins2d.x, maxs2d.x));
@@ -67,7 +67,7 @@ void hud::DrawESP()
 	{
 		Entity *ent = ents->GetEntity(i);
 
-		if (!ent || ent == lp)
+		if (ent == nullptr || ent == lp)
 			continue;
 
 		if (ent->IsDormant())
@@ -122,7 +122,7 @@ void hud::DrawESP()
 
 			if (1) // menu.ESP.name
 			{
-				static player_info info;
+				player_info info;
 				engine->GetPlayerInfo(i, info);
 
 				int length;
@@ -163,45 +163,75 @@ void hud::DrawESP()
 			continue;
 		}
 
-#if defined(L4D) || defined(L4D2)
-		if (1 && !strcmp(ent->GetNetworkClass()->name, "Infected"))
+		if (1)
 		{
-			if (!ent->NPC_IsAlive())
-				continue;
-
-			int x0, y0, x1, y1;
-
-			if (!MakeBox(ent, x0, y0, x1, y1))
-				continue;
-
-			surface->SetColor(0x00, 0x00, 0x00, 0x7f);
-			surface->DrawOutlinedRect(x0 - 1, y0 - 1, x1 + 1, y1 + 1);
-			surface->DrawOutlinedRect(x0 + 1, y0 + 1, x1 - 1, y1 - 1);
-
-			surface->SetColor(0xc8, 0xff, 0x00, 0xff);
-			surface->DrawOutlinedRect(x0, y0, x1, y1);
-
-
-			int tw, th;
-
-			if (ReadPtr<bool>(ent, m_mobRush))
+#if defined(L4D) || defined(L4D2)
+			if (!strcmp(ent->GetNetworkClass()->name, "Infected"))
 			{
-				surface->GetTextSize(ui::font_hud, L"Mob rush", tw, th);
+				if (!ent->NPC_IsAlive())
+					continue;
+
+				int x0, y0, x1, y1;
+
+				if (!MakeBox(ent, x0, y0, x1, y1))
+					continue;
+
+				surface->SetColor(0x00, 0x00, 0x00, 0x7f);
+				surface->DrawOutlinedRect(x0 - 1, y0 - 1, x1 + 1, y1 + 1);
+				surface->DrawOutlinedRect(x0 + 1, y0 + 1, x1 - 1, y1 - 1);
+
+				surface->SetColor(0xc8, 0xff, 0x00, 0xff);
+				surface->DrawOutlinedRect(x0, y0, x1, y1);
+
+
+				int tw, th;
+
+				if (ReadPtr<bool>(ent, m_mobRush))
+				{
+					surface->GetTextSize(ui::font_hud, L"Mob rush", tw, th);
+
+					surface->SetTextPos((x0 + x1 - tw) / 2, y1 + 1);
+					surface->DrawText(L"Mob rush", 8, 0);
+				}
+				else
+				{
+					surface->GetTextSize(ui::font_hud, L"Common", tw, th);
+
+					surface->SetTextPos((x0 + x1 - tw) / 2, y1 + 1);
+					surface->DrawText(L"Common", 6, 0);
+				}
+
+				continue;
+			}
+
+			if (!strcmp(ent->GetNetworkClass()->name, "Witch"))
+			{
+				if (!ent->NPC_IsAlive())
+					continue;
+
+				int x0, y0, x1, y1;
+
+				if (!MakeBox(ent, x0, y0, x1, y1))
+					continue;
+
+				surface->SetColor(0x00, 0x00, 0x00, 0x7f);
+				surface->DrawOutlinedRect(x0 - 1, y0 - 1, x1 + 1, y1 + 1);
+				surface->DrawOutlinedRect(x0 + 1, y0 + 1, x1 - 1, y1 - 1);
+
+				surface->SetColor(0x96, 0x00, 0xe1, 0xff);
+				surface->DrawOutlinedRect(x0, y0, x1, y1);
+
+				int tw, th;
+
+				surface->GetTextSize(ui::font_hud, L"Witch", tw, th);
 
 				surface->SetTextPos((x0 + x1 - tw) / 2, y1 + 1);
-				surface->DrawText(L"Mob rush", 8, 0);
-			}
-			else
-			{
-				surface->GetTextSize(ui::font_hud, L"Common", tw, th);
+				surface->DrawText(L"Witch", 5, 0);
 
-				surface->SetTextPos((x0 + x1 - tw) / 2, y1 + 1);
-				surface->DrawText(L"Common", 6, 0);
+				continue;
 			}
-
-			continue;
-		}
 #endif
+		}
 	}
 }
 
