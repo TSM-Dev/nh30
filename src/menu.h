@@ -6,7 +6,7 @@ class menu_t
 public:
 	struct
 	{
-		
+
 	}
 	esp;
 

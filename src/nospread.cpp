@@ -24,7 +24,6 @@ void nospread::ApplySpread(int sequence_number, Entity *pl, Angle &angles, float
 	int random_seed = MD5_PseudoRandom(sequence_number) & 0x7fffffff;
 
 #if defined(CSS) || defined(CSGO)
-
 	RandomSeed(random_seed + 1 & 0xff);
 
 	w->UpdateAccuracyPenalty();
@@ -50,15 +49,14 @@ void nospread::ApplySpread(int sequence_number, Entity *pl, Angle &angles, float
 #endif
 
 #if defined(L4D) || defined(L4D2)
-	static auto SharedRandomFloat = (float (*)(const char *, float, float, int))util::FindSubStart(util::FindString(GetModuleHandle("client"), "SharedRandomFloat"));
- 	static int *g_random_seed = *(int **)util::FindPattern((void *)SharedRandomFloat, 0x100, Q"A1 .? ? ? ?");
+	static auto SharedRandomFloat = (float (*)(const char *, float, float, int))util::FindProlog(util::FindString(GetModuleHandle("client"), "SharedRandomFloat"));
+	static int &r_random_seed = **(int **)util::FindPattern((void *)SharedRandomFloat, 0x100, Q"A1 .? ? ? ?");
 
- 	*g_random_seed = random_seed;
-
+ 	r_random_seed = random_seed;
 
 	float spread = w->GetWeaponSpread();
 
 	angles.x += SharedRandomFloat("CTerrorGun::FireBullet HorizSpread", -spread, spread, 0) * factor;
-	angles.y += SharedRandomFloat("CTerrorGun::FireBullet VertSpread" , -spread, spread, 0) * factor;
+	angles.y += SharedRandomFloat("CTerrorGun::FireBullet VertSpread",  -spread, spread, 0) * factor;
 #endif
 }

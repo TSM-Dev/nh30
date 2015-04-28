@@ -3,7 +3,7 @@ IEngineVGui engine.VEngineVGui
 
 
 ISurface vguimatsurface.VGUI_Surface
-#if defined(VORANGEBOX)
+#ifdef VORANGEBOX
 	void SetColor(int r, int g, int b, int a):11
 	void DrawFilledRect(int x0, int y0, int x1, int y1):12
 	void DrawOutlinedRect(int x0, int y0, int x1, int y1):14
@@ -19,7 +19,7 @@ ISurface vguimatsurface.VGUI_Surface
 	void GetTextSize(unsigned long font, const wchar_t *text, int &w, int &h):75
 #endif
 
-#if defined(VL4D)
+#ifdef VL4D
 	void SetColor(int r, int g, int b, int a):11
 	void DrawFilledRect(int x0, int y0, int x1, int y1):12
 	void DrawOutlinedRect(int x0, int y0, int x1, int y1):14
@@ -35,7 +35,7 @@ ISurface vguimatsurface.VGUI_Surface
 	void GetTextSize(unsigned long font, const wchar_t *text, int &w, int &h):72
 #endif
 
-#if defined(VALIENSWARM)
+#ifdef VALIENSWARM
 	void SetColor(int r, int g, int b, int a):14
 	void DrawFilledRect(int x0, int y0, int x1, int y1):15
 	void DrawOutlinedRect(int x0, int y0, int x1, int y1):17
@@ -58,9 +58,10 @@ IEngine engine.VEngineClient
 	int GetLocalPlayer():12
 	bool IsInGame():26
 
-#if defined(VORANGEBOX)
+#ifdef VORANGEBOX
 	matrix4x4 &WorldToScreen():36
-#else
+#endif
+#if defined(VALIENSWARM) || defined(VL4D)
 	matrix4x4 &WorldToScreen():37
 #endif
 
@@ -72,9 +73,10 @@ IEntities client.VClientEntityList
 
 
 ITrace engine.EngineTraceClient
-#if defined(VORANGEBOX)
+#ifdef VORANGEBOX
 	void TraceRay(const ray &t, int mask, void *filter, trace &tr):4
-#else
+#endif
+#if defined(VALIENSWARM) || defined(VL4D)
 	void TraceRay(const ray &t, int mask, void *filter, trace &tr):5
 #endif
 
@@ -83,9 +85,10 @@ IClient client.VClient
 
 
 IModelInfo engine.VModelInfoClient
-#if defined(VORANGEBOX)
+#ifdef VORANGEBOX
 	void *GetStudiomodel(void *):28
-#else
+#endif
+#if defined(VALIENSWARM) || defined(VL4D)
 	void *GetStudiomodel(void *):30
 #endif
 
@@ -96,17 +99,17 @@ IMovement client.GameMovement
 
 
 IPrediction client.VClientPrediction
-#if defined(VORANGEBOX)
+#ifdef VORANGEBOX
 	void SetupMove(Entity *pl, UserCmd *ucmd, void *movehelper, void *movedata):18
 	void FinishMove(Entity *pl, UserCmd *ucmd, void *movedata):19
 #endif
 
-#if defined(VL4D)
+#ifdef VL4D
 	void SetupMove(Entity *pl, UserCmd *ucmd, void *movehelper, void *movedata):19
 	void FinishMove(Entity *pl, UserCmd *ucmd, void *movedata):20
 #endif
 
-#if defined(VALIENSWARM)
+#ifdef VALIENSWARM
 	void SetupMove(Entity *pl, UserCmd *ucmd, void *movehelper, void *movedata):20
 	void FinishMove(Entity *pl, UserCmd *ucmd, void *movedata):21
 #endif

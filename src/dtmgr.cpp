@@ -59,7 +59,7 @@ int dtmgr::GetOffset(const char *dt, const char *name)
 	return 0;
 }
 
-void dtmgr::SetHook(const char *dt, const char *name, void (*function)(const RecvProxyData &, void *, RecvProxyResult &))
+void dtmgr::SetHook(const char *dt, const char *name, void (*proxyfn)(const RecvProxyData &, void *, RecvProxyResult &))
 {
 	for (int i = 0;; i++)
 	{
@@ -76,7 +76,7 @@ void dtmgr::SetHook(const char *dt, const char *name, void (*function)(const Rec
 
 				if (strcmp(prop->name, name) == 0)
 				{
-					prop->proxy = (void *)function;
+					prop->proxy = (void *)proxyfn;
 				}
 			}
 		}
@@ -90,7 +90,7 @@ void dtmgr::Start()
 
 	for (int i = 0; !nwclass; i++)
 	{
-		if (*client->GetMethod<char *>(i) == 0xa1)
+		if (*client->GetMethod<char *>(i) == '\xa1')
 			nwclass = **(NetworkClass ***)(client->GetMethod<char *>(i) + 1);
 	}
 

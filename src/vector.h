@@ -7,81 +7,98 @@
 
 #include <cstring>
 
+/*
 
-#define FLT_PI 		3.1415925f
-#define FLT_PI2		1.5707963f
-#define FLT_EPSILON 1.192092896e-07f
+29 марта 2015 г.
+21:40 - Leystryku: hey nano
+21:40 - Leystryku: Vector v1,v2,v3;
+v1 = Vector(1,-spread.x,spread.y);
+v2 = Vector(0,-spread.x,abs(spread.y+(1/spread.y)+(1/spread.y)));
+
+if (spread.x > 0 && spread.y < 0)
+v2.y = abs(v2.y);
+else if (spread.x < 0 && spread.y < 0)
+v2.y = -abs(v2.y);
+
+v3 = v2.Cross(v1);
+cmd->ang.z += deg(atan2f(v3.z,(v3.y * v1.x) - (v3.x * v1.y)));
+21:40 - Leystryku: this is supposed  to fix all problems with nospread over long distances
+
+*/
+
+const float pi		= 3.1415926535897932384626433832795f;
+const float pi0p5	= pi * 0.5f;
+
+const float epsilon	= 1.401298e-45f;
 
 #define max(a,b) (((a)>(b))?(a):(b))
 #define min(a,b) (((a)<(b))?(a):(b))
 
 static void SinCos(const float rad, float &sin, float &cos) // #include <emmintrin.h>, #include <xmmintrin.h>
 {
-	const __m128 _ps_fopi = _mm_set_ss(1.27323954473516f);
+	const __m128 _ps_fopi = _mm_set1_ps(4.0f / pi);
 
-	const __m128 _ps_0p5 = _mm_set_ss(0.5f);
-	const __m128 _ps_1   = _mm_set_ss(1.0f);
+	const __m128 _ps_0p5 = _mm_set1_ps(0.5f);
+	const __m128 _ps_1   = _mm_set1_ps(1.0f);
 
-	const __m128 _ps_dp1 = _mm_set_ss(-0.7851562f);
-	const __m128 _ps_dp2 = _mm_set_ss(-2.4187564849853515625e-4f);
-	const __m128 _ps_dp3 = _mm_set_ss(-3.77489497744594108e-8f);
+	const __m128 _ps_dp1 = _mm_set1_ps(-0.7851562f);
+	const __m128 _ps_dp2 = _mm_set1_ps(-2.4187564849853515625e-4f);
+	const __m128 _ps_dp3 = _mm_set1_ps(-3.77489497744594108e-8f);
 
-	const __m128 _ps_sincof_p0 = _mm_set_ss(2.443315711809948e-5f);
-	const __m128 _ps_sincof_p1 = _mm_set_ss(8.3321608736e-3f);
-	const __m128 _ps_sincof_p2 = _mm_set_ss(-1.6666654611e-1f);
-	const __m128 _ps_coscof_p0 = _mm_set_ss(2.443315711809948e-5f);
-	const __m128 _ps_coscof_p1 = _mm_set_ss(-1.388731625493765e-3f);
-	const __m128 _ps_coscof_p2 = _mm_set_ss(4.166664568298827e-2f);
+	const __m128 _ps_sincof_p0 = _mm_set1_ps(2.443315711809948e-5f);
+	const __m128 _ps_sincof_p1 = _mm_set1_ps(8.3321608736e-3f);
+	const __m128 _ps_sincof_p2 = _mm_set1_ps(-1.6666654611e-1f);
+	const __m128 _ps_coscof_p0 = _mm_set1_ps(2.443315711809948e-5f);
+	const __m128 _ps_coscof_p1 = _mm_set1_ps(-1.388731625493765e-3f);
+	const __m128 _ps_coscof_p2 = _mm_set1_ps(4.166664568298827e-2f);
 
 	const __m128i _pi32_1  = _mm_set1_epi32(1);
 	const __m128i _pi32_i1 = _mm_set1_epi32(~1);
 	const __m128i _pi32_2  = _mm_set1_epi32(2);
 	const __m128i _pi32_4  = _mm_set1_epi32(4);
 
-	const __m128 _mask_sign_raw = (__m128)_mm_set1_epi32(0x80000000);
-	const __m128 _mask_sign_inv = (__m128)_mm_set1_epi32(~0x80000000);
+	const __m128 _mask_sign_raw = _mm_castsi128_ps(_mm_set1_epi32( 0x80000000));
+	const __m128 _mask_sign_inv = _mm_castsi128_ps(_mm_set1_epi32(~0x80000000));
 
-
-	__m128  xmm1, xmm2, xmm3 = _mm_setzero_ps();
-	__m128i emm0, emm2, emm4;
-
-	__m128 sign_bit_cos, sign_bit_sin;
+	__m128  mm1,  mm2,  mm3 = _mm_setzero_ps();
+	__m128i mmi0, mmi2, mmi4;
 
 	__m128 x, y, z;
 	__m128 y1,  y2;
 
-	__m128 a = _mm_set_ss(rad);
+	__m128 a = _mm_set1_ps(rad);
 
 	x = _mm_and_ps(a, _mask_sign_inv);
 	y = _mm_mul_ps(x, _ps_fopi);
 
-	emm2 = _mm_cvtps_epi32(y);
-	emm2 = _mm_add_epi32(emm2, _pi32_1);
-	emm2 = _mm_and_si128(emm2, _pi32_i1);
-	y    = _mm_cvtepi32_ps(emm2);
+	mmi2 = _mm_cvtps_epi32(y);
+	mmi2 = _mm_add_epi32(mmi2, _pi32_1);
+	mmi2 = _mm_and_si128(mmi2, _pi32_i1);
+	y    = _mm_cvtepi32_ps(mmi2);
 
-	emm4 = emm2;
+	mmi4 = mmi2;
 
-	emm0 = _mm_and_si128(emm2, _pi32_4);
-	emm0 = _mm_slli_epi32(emm0, 29);
-	__m128 swap_sign_bit_sin = _mm_castsi128_ps(emm0);
+	mmi0 = _mm_and_si128(mmi2, _pi32_4);
+	mmi0 = _mm_slli_epi32(mmi0, 29);
+	__m128 swap_sign_bit_sin = _mm_castsi128_ps(mmi0);
 
-	emm2 = _mm_and_si128(emm2, _pi32_2);
-	emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
-	__m128 poly_mask = _mm_castsi128_ps(emm2);
+	mmi2 = _mm_and_si128(mmi2, _pi32_2);
+	mmi2 = _mm_cmpeq_epi32(mmi2, _mm_setzero_si128());
+	__m128 poly_mask = _mm_castsi128_ps(mmi2);
 
 	x = _mm_add_ps(x, _mm_mul_ps(y, _ps_dp1));
 	x = _mm_add_ps(x, _mm_mul_ps(y, _ps_dp2));
 	x = _mm_add_ps(x, _mm_mul_ps(y, _ps_dp3));
 
-	emm4 = _mm_sub_epi32(emm4, _pi32_2);
-	emm4 = _mm_andnot_si128(emm4, _pi32_4);
-	emm4 = _mm_slli_epi32(emm4, 29);
+	mmi4 = _mm_sub_epi32(mmi4, _pi32_2);
+	mmi4 = _mm_andnot_si128(mmi4, _pi32_4);
+	mmi4 = _mm_slli_epi32(mmi4, 29);
 
-	sign_bit_cos = _mm_castsi128_ps(emm4);
-	sign_bit_sin = _mm_xor_ps(_mm_and_ps(a, _mask_sign_raw), swap_sign_bit_sin);
+	__m128 sign_bit_cos = _mm_castsi128_ps(mmi4);
+	__m128 sign_bit_sin = _mm_xor_ps(_mm_and_ps(a, _mask_sign_raw), swap_sign_bit_sin);
 
-	z = _mm_mul_ps(x, x);
+
+	z  = _mm_mul_ps(x, x);
 
 	y1 = _mm_mul_ps(_ps_coscof_p0, z);
 	y1 = _mm_add_ps(y1, _ps_coscof_p1);
@@ -100,75 +117,95 @@ static void SinCos(const float rad, float &sin, float &cos) // #include <emmintr
 	y2 = _mm_mul_ps(y2, x);
 	y2 = _mm_add_ps(y2, x);
 
-	xmm3 = poly_mask;
 
-	__m128 ysin2 = _mm_and_ps(xmm3, y2);
-	__m128 ysin1 = _mm_andnot_ps(xmm3, y1);
+	mm3 = poly_mask;
 
-	sin = _mm_cvtss_f32(_mm_xor_ps(_mm_add_ps(ysin1, ysin2), sign_bit_sin));
-	cos = _mm_cvtss_f32(_mm_xor_ps(_mm_add_ps(_mm_sub_ps(y1, ysin1), _mm_sub_ps(y2, ysin2)), sign_bit_cos));
+	__m128 sin1y = _mm_andnot_ps(mm3, y1);
+	__m128 sin2y = _mm_and_ps(mm3, y2);
+
+
+	mm1 = _mm_add_ps(sin1y, sin2y);
+	mm2 = _mm_add_ps(_mm_sub_ps(y1, sin1y), _mm_sub_ps(y2, sin2y));
+
+	sin = _mm_cvtss_f32(_mm_xor_ps(mm1, sign_bit_sin));
+	cos = _mm_cvtss_f32(_mm_xor_ps(mm2, sign_bit_cos));
 }
 
-inline float Atan2(float y, float x)
+static float Atan(float y, float x) // #include <emmintrin.h>, #include <xmmintrin.h>
 {
-	if (x == 0.0f)
-	{
-		if (y > 0.0f)
-		{
-			return FLT_PI2;
-		}
+	const __m128 _ps_atan_p0 = _mm_set1_ps(-0.0464964749f);
+	const __m128 _ps_atan_p1 = _mm_set1_ps(0.15931422f);
+	const __m128 _ps_atan_p2 = _mm_set1_ps(0.327622764f);
 
-		if (y == 0.0f)
-		{
-			return 0.0f;
-		}
+	const __m128 _ps_pi    = _mm_set1_ps(pi);
+	const __m128 _ps_pi0p5 = _mm_set1_ps(pi0p5);
 
-		return -FLT_PI2;
-	}
+	const __m128 _mask_sign_raw = _mm_castsi128_ps(_mm_set1_epi32( 0x80000000));
+	const __m128 _mask_sign_inv = _mm_castsi128_ps(_mm_set1_epi32(~0x80000000));
 
-	float atan;
-	float z = y / x;
+	__m128 mm1, mm2, mm3;
+	__m128 axm, aym;
 
-	if (fabs(z) < 1.0f)
-	{
-		atan = z / (1.0f + 0.28f * z * z);
+	__m128 xm = _mm_set1_ps(x);
+	__m128 ym = _mm_set1_ps(y);
 
-		if (x < 0.0f)
-		{
-			if (y < 0.0f)
-			{
-				return atan - FLT_PI;
-			}
+	axm = _mm_and_ps(xm, _mask_sign_inv);
+	aym = _mm_and_ps(ym, _mask_sign_inv);
+	
+	mm1 = _mm_min_ps(axm, aym);
+	mm2 = _mm_max_ps(axm, aym);
+	mm1 = _mm_div_ps(mm1, mm2);
+	mm2 = _mm_mul_ps(mm1, mm1);
 
-			return atan + FLT_PI;
-		}
-	}
-	else
-	{
-		atan = FLT_PI2 - z / (z * z + 0.28f);
+	mm3 = _mm_mul_ps(mm2, _ps_atan_p0);
+	mm3 = _mm_add_ps(mm3, _ps_atan_p1);
+	mm3 = _mm_mul_ps(mm3, mm2);
+	mm3 = _mm_sub_ps(mm3, _ps_atan_p2);
+	mm3 = _mm_mul_ps(mm3, mm2);
+	mm3 = _mm_mul_ps(mm3, mm1);
+	mm3 = _mm_add_ps(mm3, mm1);
+	
+	__m128 mask;
 
-		if (y < 0.0f)
-		{
-			return atan - FLT_PI;
-		}
-	}
+	/* |y| > |x| */
+	mask = _mm_cmpgt_ss(aym, axm);
+	mm2 = _mm_and_ps(_ps_pi0p5, mask);
+	mm1 = _mm_and_ps(_mask_sign_raw, mask);
+	mm3 = _mm_xor_ps(mm3, mm1);
+	mm3 = _mm_add_ps(mm3, mm2);
 
-	return atan;
+	/* x < 0 */
+	mask = _mm_and_ps(xm, _mask_sign_raw);
+	mm3 = _mm_xor_ps(mm3, mask);
+	mm1 = _mm_castsi128_ps(_mm_srai_epi32(_mm_castps_si128(mm3), 30));
+	mm1 = _mm_and_ps(_ps_pi, mm1);
+	mm3 = _mm_add_ps(mm3, mm1);
+
+	/* y < 0 */
+	mm1 = _mm_and_ps(ym, _mask_sign_raw);
+	mm3 = _mm_xor_ps(mm3, mm1);
+	
+	return _mm_cvtss_f32(mm3);
 }
 
-inline float Rad2Deg(const float &i)
+inline float Rad2Deg(const float &rad)
 {
-	return i * (180.f / FLT_PI);
+	return rad * (180.f / pi);
 }
 
-inline float Deg2Rad(const float &i)
+inline float Deg2Rad(const float &deg)
 {
-	return i * (FLT_PI / 180.f);
+	return deg * (pi / 180.f);
 }
 
-inline float Sqrt(const float &i) // #include <xmmintrin.h>
+inline float Sqrt(const float &sqr) // #include <xmmintrin.h>
 {
-	return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(i)));
+	__m128 mm1;
+
+	mm1 = _mm_set_ss(sqr);
+	mm1 = _mm_sqrt_ss(mm1);
+
+	return _mm_cvtss_f32(mm1);
 }
 
 
@@ -199,7 +236,7 @@ public:
 	bool	operator!=(const Vector &) const;
 
 	void	Zero();
-	bool	IsZero(const float = FLT_EPSILON) const;
+	bool	IsZero(const float = epsilon) const;
 	bool	ToScreen(Vector &) const;
 
 	Vector	Cross(const Vector &) const;
@@ -363,8 +400,8 @@ inline void VectorAngles(const Vector &vec, Angle &angles)
 	}
 	else
 	{
-		angles.x = Rad2Deg(Atan2(-vec.z, vec.Length2D()));
-		angles.y = Rad2Deg(Atan2(vec.y, vec.x));
+		angles.x = Rad2Deg(Atan(-vec.z, vec.Length2D()));
+		angles.y = Rad2Deg(Atan(vec.y, vec.x));
 	}
 }
 
@@ -376,16 +413,16 @@ inline void VectorAngles(const Vector &vec, const Vector &up, Angle &angles)
 	left.Normalize();
 
 	float len = vec.Length2D();
-	angles.x = Rad2Deg(Atan2(-vec.z, len));
+	angles.x = Rad2Deg(Atan(-vec.z, len));
 
 	if (len > 0.001f)
 	{
-		angles.y = Rad2Deg(Atan2(vec.y, vec.x));
-		angles.z = Rad2Deg(Atan2(left.z, ((left.y * vec.x) - (left.x * vec.y))));
+		angles.y = Rad2Deg(Atan(vec.y, vec.x));
+		angles.z = Rad2Deg(Atan(left.z, ((left.y * vec.x) - (left.x * vec.y))));
 	}
 	else
 	{
-		angles.y = Rad2Deg(Atan2(-left.x, left.y));
+		angles.y = Rad2Deg(Atan(-left.x, left.y));
 		angles.z = 0.0f;
 	}
 
@@ -428,14 +465,14 @@ inline void MatrixAngles(const matrix3x4 &matrix, Angle &angles)
 	float len2d = forward.Length2D();
 	if (len2d > 0.001f)
 	{
-		angles.x = Rad2Deg(Atan2(-forward.z, len2d));
-		angles.y = Rad2Deg(Atan2(forward.y, forward.x));
-		angles.z = Rad2Deg(Atan2(left.z, up.z));
+		angles.x = Rad2Deg(Atan(-forward.z, len2d));
+		angles.y = Rad2Deg(Atan(forward.y, forward.x));
+		angles.z = Rad2Deg(Atan(left.z, up.z));
 	}
 	else
 	{
-		angles.x = Rad2Deg(Atan2(-forward.z, len2d));
-		angles.y = Rad2Deg(Atan2(-left.x, left.y));
+		angles.x = Rad2Deg(Atan(-forward.z, len2d));
+		angles.y = Rad2Deg(Atan(-left.x, left.y));
 		angles.z = 0.f;
 	}
 }
@@ -518,18 +555,18 @@ inline Vector& Vector::operator*=(const float f)
 
 inline Vector& Vector::operator/=(const Vector &v)
 {
-	x /= v.x + FLT_EPSILON;
-	y /= v.y + FLT_EPSILON;
-	z /= v.z + FLT_EPSILON;
+	x /= v.x + epsilon;
+	y /= v.y + epsilon;
+	z /= v.z + epsilon;
 
 	return *this;
 }
 
 inline Vector& Vector::operator/=(const float f)
 {
-	x /= f + FLT_EPSILON;
-	y /= f + FLT_EPSILON;
-	z /= f + FLT_EPSILON;
+	x /= f + epsilon;
+	y /= f + epsilon;
+	z /= f + epsilon;
 
 	return *this;
 }
@@ -546,12 +583,12 @@ inline Vector Vector::operator-(const Vector &v) const
 
 inline Vector Vector::operator/(const Vector &v) const
 {
-	return Vector(x / (v.x + FLT_EPSILON), y / (v.y + FLT_EPSILON), z / (v.z + FLT_EPSILON));
+	return Vector(x / (v.x + epsilon), y / (v.y + epsilon), z / (v.z + epsilon));
 }
 
 inline Vector Vector::operator/(const float f) const
 {
-	return Vector(x / (f + FLT_EPSILON), y / (f + FLT_EPSILON), z / (f + FLT_EPSILON));
+	return Vector(x / (f + epsilon), y / (f + epsilon), z / (f + epsilon));
 }
 
 inline Vector Vector::operator*(const Vector &v) const
@@ -613,7 +650,7 @@ inline float Vector::DistTo(const Vector &v) const
 inline float Vector::Normalize()
 {
 	float l = Length();
-	float m = 1.0f / (l + FLT_EPSILON);
+	float m = 1.0f / (l + epsilon);
 
 	x *= m;
 	y *= m;

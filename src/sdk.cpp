@@ -9,9 +9,8 @@ bool Vector::ToScreen(Vector &screen) const
 
 	if (m3d2d > 0.001f)
 	{
-		int w, h;
+		int w = 1, h = 1;
 		engine->GetScreenSize(w, h);
-
 
 		float t = 1.0f / m3d2d;
 
@@ -27,9 +26,11 @@ bool Vector::ToScreen(Vector &screen) const
 
 const char *Entity::GetClass()
 {
-#if defined(VALIENSWARM)
+#ifdef VALIENSWARM
 	static auto GetClassnameFn = (const char *(__thiscall *)(void *))util::FindPattern("client", Q"56 8B F1 C6 ? ? ? ? ? ? 8B 46");
-#else
+#endif
+
+#if defined(VORANGEBOX) || defined(VL4D)
 	static auto GetClassnameFn =
 		(const char *(__thiscall *)(void *))util::CalcAbsAddress(util::FindPattern("client", Q"E8 .? ? ? ? 50 68 ? ? ? ? FF 15 ? ? ? ? 83 C4 0C 5F 5E 8B E5"));
 #endif
@@ -55,7 +56,7 @@ bool Entity::SetupBones()
 	extern IModelInfo *mdlinfo;
 
 	static auto BoneSetupFn =
-		(bool (__thiscall *)(void *, matrix3x4 *, int, int, float))util::FindSubStart(util::FindString(GetModuleHandle("client"), "*** ERROR: Bone access not allowed (entity %i:%s)\n"));
+		(bool (__thiscall *)(void *, matrix3x4 *, int, int, float))util::FindProlog(util::FindString(GetModuleHandle("client"), "*** ERROR: Bone access not allowed (entity %i:%s)\n"));
 
 	void *header = mdlinfo->GetStudiomodel(GetModel());
 
@@ -90,9 +91,10 @@ WeaponInfo *Entity::GetWeaponInfo()
 #endif
 }
 
-void Interface::Create(const char *bin, const char *name)
+void Interface::Create(const char *module, const char *name)
 {
-	auto CreateInterface = (void *(*)(const char *, void *))GetProcAddress(GetModuleHandle(bin), "CreateInterface");
+	auto CreateInterface = (void *(*)(const char *, void *))GetProcAddress(GetModuleHandle(module), "CreateInterface");
+
 
 	char *start = (char *)GetModuleHandle("client");
 
@@ -109,19 +111,13 @@ void Interface::Create(const char *bin, const char *name)
 	vmthook = new VMT(thisptr);
 }
 
-void Interface::Link(void *func, int to)
+void Interface::Link(void *func, int index)
 {
 	char *mem = (char *)func;
 
-	DWORD oldprotect;
-	VirtualProtect(mem, 10, PAGE_EXECUTE_READWRITE, &oldprotect);
+	*(mem + 0) = '\xb9';
+	*(mem + 5) = '\xe9';
 
-	*(mem+0) = '\xb9';
-	*(mem+5) = '\xe9';
-
-	*(void **)(mem+1) = thisptr;
-	*(unsigned int *)(mem+6) = 0 - (mem - GetMethod<char *>(to)) - 10;
-
-	VirtualProtect(mem, 10, oldprotect, &oldprotect);
+	*(void **)(mem + 1) = thisptr;
+	*(int *)(mem + 6)   = (int)(GetMethod<char *>(index) - (mem + 10));
 }
-

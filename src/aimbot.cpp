@@ -23,15 +23,15 @@ void  aimbot::RunCommand(UserCmd *ucmd)
 	if (movehelper == nullptr)
 		return;
 
-#if defined(VORANGEBOX)
+#ifdef VORANGEBOX
 	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(17), 0x100, Q"89 ? .? ? ? ? E8");
 #endif
 
-#if defined(VL4D)
+#ifdef VL4D
 	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(18), 0x100, Q"89 ? .? ? ? ? E8");
 #endif
 
-#if defined(VALIENSWARM)
+#ifdef VALIENSWARM
 	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(19), 0x100, Q"89 ? .? ? ? ? E8");
 #endif
 
@@ -56,19 +56,20 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 {
 	trace tr;
 
-#if defined(TF2)
+#ifdef TF2
 	enginetrace->TraceRay(ray(start, end), 0x0200400b, bf, tr);
 #else
-#  if defined(WALLBANG)
+#  ifdef WALLBANG
 	if (1) // menu.autowall
 #  endif
-	enginetrace->TraceRay(ray(start, end), 0x46004003, bf, tr);
-#  if defined(WALLBANG)
+	enginetrace->TraceRay(ray(start, end), 0x46004003, bf, tr); // 0x6004003
+#  ifdef WALLBANG
 	else
 	{
-		int penetration = weaponinfo->penetration();
 
-		
+
+		//int penetration = weaponinfo->penetration();
+		//float damage    = weaponinfo->
 
 		/*
 		bool __stdcall L4D_CanPenetrate ( Vector vecStart, Vector vecEnd )
@@ -81,7 +82,7 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 
 
 			int iDamage;
-				
+
 			int iPenetration;
 
 
@@ -93,10 +94,10 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 
 
 			Vector tmpVec;
-			
+
 			Vector vecDir;
 			Vector vecSrc;
-			
+
 			vecDir = vecEnd - vecStart;
 
 
@@ -107,7 +108,7 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 
 
 			g_pAutoWall->m_vecDir = vecDir;
-			
+
 			flDamage = g_pL4DWeaponData->m_fDamage;
 			flRange = g_pL4DWeaponData->m_fRange;
 			flRangeModifier = g_pL4DWeaponData->m_fRangeModifier;
@@ -115,7 +116,7 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 
 
 			VectorCopy ( vecStart, vecSrc );
-				
+
 			while ( iPenetration )
 			{
 				iDamage = ( int )flDamage;
@@ -125,7 +126,7 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 
 
 				pTraceLine ( vecSrc, vecEnd, 0x2004003, g_pBaseClient->pBaseEntity, 0, &gTr );
-				
+
 				if ( gTr.fraction != 1.0f )
 				{
 					VectorSubtract ( gTr.endpos, vecStart, tmpVec );
@@ -163,7 +164,7 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 
 				iPenetration--;
 			}
-			
+
 			return false;
 		}
 		*/

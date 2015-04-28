@@ -33,11 +33,29 @@ void *util::FindPattern(const char *l, const pattern *data)
 	return FindPattern(GetModuleHandle(l), -1, data);
 }
 
+void *util::FindProlog(void *ptr)
+{
+	unsigned char *ins = (unsigned char *)ptr;
 
+	while (ins > 0)
+	{
+		if ((ins[0]&0xf0) == 0x50 &&
+			(ins[1]&0xf0) == 0x80 &&
+			(ins[2]&0x0f) == 0x0c)
+		{
+			return ins;
+		}
+
+		ins--;
+	}
+
+	return nullptr;
+}
 
 void *util::FindString(void *p, const char *string)
 {
-	char *start, *str = nullptr;
+	char *start;
+	char *str = nullptr;
 
 	for (start = (char *)p; !str; start++)
 	{
@@ -45,10 +63,12 @@ void *util::FindString(void *p, const char *string)
 			str = start;
 	}
 
-	for (;; start--)
+	while (1)
 	{
 		if (*(char **)start == str)
 			return start;
+
+		start--;
 	}
 
 	return nullptr;

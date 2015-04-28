@@ -68,11 +68,11 @@ struct player_info
 {
 private:
 
-#if defined(VALIENSWARM)
+#ifdef VALIENSWARM
 	char	header[0x10];
 #endif
 
-#if defined(VL4D)
+#ifdef VL4D
 	char	header[0x8];
 #endif
 
@@ -110,7 +110,7 @@ struct ray
 	VectorAligned	startoffset;
 	VectorAligned	extents;
 
-#if !defined(VORANGEBOX)
+#ifndef VORANGEBOX
 	void	*matrix;
 #endif
 
@@ -133,7 +133,7 @@ struct ray
 		isswept	= !delta.IsZero();
 		isray	= true;
 
-#if !defined(VORANGEBOX)
+#ifndef VORANGEBOX
 		matrix	= 0;
 #endif
 
@@ -175,7 +175,7 @@ struct trace
 
 struct Globals
 {
-#if defined(VALIENSWARM)
+#ifdef VALIENSWARM
 	inline int maxclients() const
 	{
 		return ReadPtr<int>(this, 0x18);
@@ -200,31 +200,31 @@ struct Globals
 
 struct WeaponInfo
 {
-#if defined(CSS)
+#ifdef CSS
 	/*
-	inline int CSS_GetPenetration()
+	inline int CSS_GetPenetration() const
 	{
 		return ReadPtr<int>(this, 0x0884);
 	}
 
-	inline int CSS_GetDamage()
+	inline int CSS_GetDamage() const
 	{
 		return ReadPtr<int>(this, 0x0888);
 	}
 
-	inline float CSS_GetDistance()
+	inline float CSS_GetDistance() const
 	{
 		return ReadPtr<float>(this, 0x088c);
 	}
 
-	inline float CSS_GetRangeModifier()
+	inline float CSS_GetRangeModifier() const
 	{
 		return ReadPtr<float>(this, 0x0890);
 	}
 	*/
 #endif
 
-#if defined(L4D2)
+#ifdef L4D2
 	inline int penetration() const
 	{
 		return ReadPtr<int>(this, 0x09c8);
@@ -257,7 +257,7 @@ public:
 	int		tick_count;
 	Angle	viewangles;
 
-#if defined(VALIENSWARM)
+#ifdef VALIENSWARM
 	Vector	aimvector;
 #endif
 
@@ -303,7 +303,7 @@ public:
 	short	mousey;
 	bool	predicted;
 
-#if defined(GMOD)
+#ifdef GMOD
 	char 	&mousewheel()
 	{
 		return *MakePtr<char>(this, 0x59);
@@ -338,7 +338,7 @@ public:
 	{
 		extern matrix3x4 matrix[128];
 
-#if defined(L4D) || defined(L4D2)
+#ifdef FIXHEAD
 		return Vector
 		(
 			matrix[box->bone][0][3],
@@ -362,7 +362,7 @@ public:
 	nwvar(nw.m_flNextPrimaryAttack)
 		float GetNextPrimaryFire();
 
-#if defined(CSGO)
+#ifdef CSGO
 	nwvar(nw.m_Local + nw.m_aimPunchAngle)
 		Angle GetViewPunch();
 #else
@@ -384,20 +384,25 @@ public:
 #endif
 
 
-#if defined(VORANGEBOX)
+#ifdef VORANGEBOX
 	vfunc(9)	Vector &GetPos();
 
 	vfunc(9,1)	void *GetModel();
 
 	vfunc(2,2)	NetworkClass *GetNetworkClass();
 	vfunc(8,2)	bool IsDormant();
-#else
-#  if defined(VL4D)
-	vfunc(11)	Vector &GetPos();
-#  else
-	vfunc(10)	Vector &GetPos();
-#  endif
+#endif
 
+
+#ifdef VL4D
+	vfunc(11)	Vector &GetPos();
+#endif
+
+#ifdef VALIENSWARM
+	vfunc(10)	Vector &GetPos();
+#endif
+
+#if defined(VL4D) || defined(VALIENSWARM)
 	vfunc(8,1)	void *GetModel();
 
 	vfunc(1,2)	NetworkClass *GetNetworkClass();
@@ -431,11 +436,11 @@ public:
 	}
 
 #if defined(CSS) || defined(CSGO)
-#  if defined(CSS)
+#  ifdef CSS
 #	define o_spread 371
 #  endif
 
-#  if defined(CSGO)
+#  ifdef CSGO
 #	define o_spread 459
 #  endif
 
@@ -447,9 +452,9 @@ public:
 #endif
 
 #if defined(L4D) || defined(L4D2)
-	float GetWeaponSpread()
+	inline float GetWeaponSpread()
 	{
-#  if defined(L4D2)
+#  ifdef L4D2
 		return ReadPtr<float>(this, 3340);
 #  endif
 	}

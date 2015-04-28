@@ -13,7 +13,7 @@ DT_BaseEntity:
 	m_Collision
 	m_angRotation
 
-#if defined(GMOD)
+#ifdef GMOD
 	m_iMaxHealth
 #endif
 
@@ -39,7 +39,7 @@ DT_LocalPlayerExclusive:
 
 DT_Local:
 
-#if defined(CSGO)
+#ifdef CSGO
 	m_aimPunchAngle
 #else
 	m_vecPunchAngle

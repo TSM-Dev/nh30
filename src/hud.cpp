@@ -78,7 +78,6 @@ void hud::DrawESP()
 			if (!ent->IsAlive())
 				continue;
 
-
 			int x0, y0, x1, y1;
 
 			if (!MakeBox(ent, x0, y0, x1, y1))
@@ -92,17 +91,28 @@ void hud::DrawESP()
 				surface->DrawFilledRect(x0 - 4, y0 - 1, x0 - 1, y1 + 1);
 
 #if defined(L4D) || defined(L4D2)
-			if (ent->GetTeam() == 2 || ent->GetTeam() == 4)
-				surface->SetColor(0x46, 0x78, 0xff, 0xff);
+			switch (ent->GetTeam())
+			{
+				case 2:
+				case 4:
+					surface->SetColor(0x46, 0x78, 0xff, 0xff);
+				break;
 
-			if (ent->GetTeam() == 3)
-				surface->SetColor(0x96, 0x00, 0xe1, 0xff);
+				case 3:
+					surface->SetColor(0x96, 0x00, 0xe1, 0xff);
+				break;
+			}
 #else
-			if (ent->GetTeam() == TEAM_RED)
-				surface->SetColor(0xff, 0x64, 0x64, 0xff);
+			switch (ent->GetTeam())
+			{
+				case TEAM_RED:
+					surface->SetColor(0xff, 0x64, 0x64, 0xff);
+				break;
 
-			if (ent->GetTeam() == TEAM_BLU)
-				surface->SetColor(0x46, 0x78, 0xff, 0xff);
+				case TEAM_BLU:
+					surface->SetColor(0x46, 0x78, 0xff, 0xff);
+				break;
+			}
 #endif
 
 			surface->DrawOutlinedRect(x0, y0, x1, y1);
@@ -142,7 +152,7 @@ void hud::DrawESP()
 				if (weapon)
 				{
 					const char *classname = weapon->GetClass();
-#if !defined(GMOD)
+#ifndef GMOD
 					if (strlen(classname) > 6)
 					{
 						classname += 6;
