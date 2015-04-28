@@ -1,12 +1,10 @@
 extension = ".dll"
 shared 	  = true
 
-
 links =
 {
 	"msvcrt",
-	"kernel32",
-	"user32",
+	"kernel32"
 }
 
 buildoptions =
@@ -20,7 +18,9 @@ buildoptions =
 	"-fno-exceptions",
 	"-fno-ident",
 	"-falign-functions=16",
-	"-funsigned-char",
+	"-fpredictive-commoning",
+	"-finline-small-functions",
+	"-funswitch-loops",
 	"-Wno-pmf-conversions",
 }
 
@@ -30,7 +30,7 @@ linkoptions =
 	"-Wl,--exclude-libs,ALL",
 	"-Wl,--version-script=../novis",
 	"-Wl,--image-base=0",
-	"-e_start@12"
+	"-e__Z5startv"
 }
 
 
@@ -42,7 +42,8 @@ configurations =
 		{
 			"VL4D",
 			"L4D2",
-			"WALLBANG"
+			"WALLBANG",
+			"FIXHEAD"
 		},
 		links =
 		{
@@ -162,7 +163,7 @@ pp.files.onopen( function( name, contents )
 						table.insert( src, v.text )
 					else
 						local type, rest = v.func:match "(.-)%s*([%a%d_]+%(.+)$"
-						table.insert( src, string.format( "__attribute__((noinline)) %s %s::%s\n{\n\tasm(\"%s\");\n}\n", type, k, rest, ( "nop\\n" ):rep( 10 ) ) )
+						table.insert( src, string.format( "__attribute__((noinline)) %s %s::%s\n{\n\tasm(\"\");\n}\n", type, k, rest ) )
 					end
 				end
 			end
