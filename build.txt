@@ -4,7 +4,7 @@ shared 	  = true
 links =
 {
 	"msvcrt",
-	"kernel32"
+	"kernel32",
 }
 
 buildoptions =
@@ -22,20 +22,28 @@ buildoptions =
 	"-finline-small-functions",
 	"-funswitch-loops",
 	"-Wno-pmf-conversions",
+
+	"-DNOMINMAX"
 }
 
 linkoptions =
 {
 	"-nostdlib",
 	"-Wl,--exclude-libs,ALL",
-	"-Wl,--version-script=../novis",
+	-- "-Wl,--version-script=../novis",
 	"-Wl,--image-base=0",
-	"-e__Z5startv"
+	"-L. -lvstdlib",
+	"-e__Z5startPviS_@12" -- "-e__Z5startv",
 }
+
+function pp.on_done( dir, out )
+	return true
+end
 
 
 configurations =
 {
+--[[
 	l4d2 =
 	{
 		defines =
@@ -43,14 +51,27 @@ configurations =
 			"VL4D",
 			"L4D2",
 			"WALLBANG",
-			"FIXHEAD"
+			"FIXHEAD",
+			"NPCS"
 		},
 		links =
 		{
 		},
 	},
+]]
+	csgo =
+	{
+		defines =
+		{
+			"VALIENSWARM",
+			"CSGO",
+			"WALLBANG"
+		},
+		links =
+		{
+		},
+	}
 }
-
 
 
 local function tmatch( text, pattern )
@@ -93,7 +114,7 @@ pp.files.onopen( function( name, contents )
 		return contents .. string.format( "\n\n\n%s\n\nvoid dtmgr::Map()\n{\n%s\n}", table.concat( defs, '\n' ), table.concat( text, '\n' ) )
 	end
 
-	if name == "sdk.cpp" or name == "sdk.h" then
+	if name == "sdk.cpp" or name == "sdk.hpp" then
 		local text = {}
 		local interface
 
@@ -120,7 +141,7 @@ pp.files.onopen( function( name, contents )
 			end
 		end
 
-		if name == "sdk.h" then
+		if name == "sdk.hpp" then
 			local src = { }
 			for k, v in pairs( text ) do
 				do
@@ -163,12 +184,12 @@ pp.files.onopen( function( name, contents )
 						table.insert( src, v.text )
 					else
 						local type, rest = v.func:match "(.-)%s*([%a%d_]+%(.+)$"
-						table.insert( src, string.format( "__attribute__((noinline)) %s %s::%s\n{\n\tasm(\"\");\n}\n", type, k, rest ) )
+						table.insert( src, string.format( "%s __attribute((noinline)) %s::%s\n{\n\tasm(\"\");\n}\n", type, k, rest ) )
 					end
 				end
 			end
 
-			return contents .. table.concat( src, "\n" )
+			return contents .. "\n\n\n" .. table.concat( src, "\n" )
 		end
 
 		return contents
@@ -199,6 +220,10 @@ pp.register.prefix( 'Q', function( contents )
 		i = i + 1
 	end
 
+	if i > 32 then
+		print( "too long signature" )
+	end
+
 	local mask = ( "\\x%02X\\x%02X\\x%02X\\x%02X" ):format(
 		bit.band( bitmask, 0xff ),
 		bit.band( bit.rshift( bitmask, 8 ), 0xff ),
@@ -220,5 +245,5 @@ end )
 pp.register.declaration( "nwvar", function( macroargs, ret, name )
 	local externs = tmatch( macroargs, "nw%.(m_%a+%d?)" )
 
-	return ( "inline %s &%s() __attribute__((pure)) { %s return *(%s *)((char *)this + (%s)); }" ):format( ret, name, ( #externs > 0 and string.format( "extern int " .. ( "%s, " ):rep( #externs - 1 ) .. "%s;", unpack( externs ) ) or "" ), ret, macroargs:gsub( "nw%.", "" ) )
+	return ( "inline %s & __attribute((pure)) %s() { %s return *(%s *)((char *)this + (%s)); }" ):format( ret, name, ( #externs > 0 and string.format( "extern int " .. ( "%s, " ):rep( #externs - 1 ) .. "%s;", unpack( externs ) ) or "" ), ret, macroargs:gsub( "nw%.", "" ) )
 end )

@@ -1,6 +1,6 @@
 #pragma once
-#include "sdk.h"
-#include "md5.h"
+#include "sdk.hpp"
+#include "md5.hpp"
 
 struct UserCmd;
 class  Entity;

@@ -1,4 +1,4 @@
-#include "vmt.h"
+#include "vmt.hpp"
 
 VMT::VMT(void *baseaddress)
 {
@@ -16,7 +16,7 @@ VMT::VMT(void *baseaddress)
 VMT::~VMT()
 {
 	*classbase = org_vmt;
-	delete new_vmt;
+	delete [] new_vmt;
 }
 
 

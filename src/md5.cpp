@@ -1,20 +1,18 @@
-#include "md5.h"
+#include "md5.hpp"
 
 #define f1(x, y, z) (z ^ (x & (y ^ z)))
-#define f2(x, y, z) f1(z, x, y)
+#define f2(x, y, z) (f1(z, x, y))
 #define f3(x, y, z) (x ^ y ^ z)
 #define f4(x, y, z) (y ^ (x | ~z))
 
 #define step(f, w, x, y, z, data, s) (w += f(x, y, z) + data,  w = w<<s | w>>(32-s), w += x)
 
-static void transform(unsigned int buf[4], const unsigned in[16])
+static void md5_transform(unsigned int buf[4], const unsigned in[16])
 {
-	register unsigned int a, b, c, d;
-
-	a = buf[0];
-	b = buf[1];
-	c = buf[2];
-	d = buf[3];
+	register unsigned int a = buf[0];
+	register unsigned int b = buf[1];
+	register unsigned int c = buf[2];
+	register unsigned int d = buf[3];
 
 	step(f1, a, b, c, d, in[ 0] + 0xd76aa478, 7);
 	step(f1, d, a, b, c, in[ 1] + 0xe8c7b756, 12);
@@ -90,7 +88,7 @@ static void transform(unsigned int buf[4], const unsigned in[16])
 	buf[3] += d;
 }
 
-void MD5Init(md5_ctx *ctx)
+void md5_init(md5_ctx *ctx)
 {
 	ctx->buf[0] = 0x67452301;
 	ctx->buf[1] = 0xefcdab89;
@@ -101,7 +99,7 @@ void MD5Init(md5_ctx *ctx)
 	ctx->bits[1] = 0;
 }
 
-void MD5Update(md5_ctx *ctx, const unsigned char *buf, unsigned int len)
+void md5_update(md5_ctx *ctx, const unsigned char *buf, unsigned int len)
 {
 	unsigned int t = ctx->bits[0];
 
@@ -126,7 +124,7 @@ void MD5Update(md5_ctx *ctx, const unsigned char *buf, unsigned int len)
 
 
 		memcpy(p, buf, t);
-		transform(ctx->buf, (unsigned int *)ctx->in);
+		md5_transform(ctx->buf, (unsigned int *)ctx->in);
 
 		buf += t;
 		len -= t;
@@ -135,7 +133,7 @@ void MD5Update(md5_ctx *ctx, const unsigned char *buf, unsigned int len)
 	while (len >= 64)
 	{
 		memcpy(ctx->in, buf, 64);
-		transform(ctx->buf, (unsigned int *)ctx->in);
+		md5_transform(ctx->buf, (unsigned int *)ctx->in);
 
 		buf += 64;
 		len -= 64;
@@ -144,7 +142,7 @@ void MD5Update(md5_ctx *ctx, const unsigned char *buf, unsigned int len)
 	memcpy(ctx->in, buf, len);
 }
 
-void MD5Final(md5_ctx *ctx, unsigned char digest[16])
+void md5_final(md5_ctx *ctx, unsigned char digest[16])
 {
 	unsigned int count;
 	unsigned char *p;
@@ -159,7 +157,7 @@ void MD5Final(md5_ctx *ctx, unsigned char digest[16])
 	if (count < 8)
 	{
 		memset(p, 0, count);
-		transform(ctx->buf, (unsigned int *)ctx->in);
+		md5_transform(ctx->buf, (unsigned int *)ctx->in);
 
 		memset(ctx->in, 0, 56);
 	}
@@ -172,21 +170,19 @@ void MD5Final(md5_ctx *ctx, unsigned char digest[16])
 	((unsigned int *)ctx->in)[14] = ctx->bits[0];
 	((unsigned int *)ctx->in)[15] = ctx->bits[1];
 
-	transform(ctx->buf, (unsigned int *)ctx->in);
+	md5_transform(ctx->buf, (unsigned int *)ctx->in);
 	memcpy(digest, ctx->buf, 16);
-	memset(ctx, 0, sizeof(ctx));
+	memset(ctx, 0, 4);
 }
 
-unsigned int MD5_PseudoRandom(unsigned int seed)
+unsigned int md5_random(unsigned int seed)
 {
-	md5_ctx ctx;
+	md5_ctx ctx = {0};
 	unsigned char digest[16];
 
-	memset(&ctx, 0, sizeof(ctx));
-
-	MD5Init(&ctx);
-	MD5Update(&ctx, (unsigned char *)&seed, sizeof(seed));
-	MD5Final(&ctx, digest);
+	md5_init(&ctx);
+	md5_update(&ctx, (unsigned char *)&seed, sizeof(seed));
+	md5_final(&ctx, digest);
 
 	return *(unsigned int *)(digest + 6);
 }

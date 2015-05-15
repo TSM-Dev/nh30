@@ -1,4 +1,4 @@
-#include "sdk.h"
+#include "sdk.hpp"
 
 bool Vector::ToScreen(Vector &screen) const
 {
@@ -81,7 +81,7 @@ Entity *Entity::GetActiveWeapon()
 
 WeaponInfo *Entity::GetWeaponInfo()
 {
-#if defined(L4D) || defined(L4D2) || defined(CSS) || defined(CSGO)
+#if defined(L4D) || defined(L4D2) || defined(CSS)
 	static auto LookupWeaponInfoSlot =
 		(unsigned short (*)(const char *))util::FindPattern("client", Q"55 8B EC 8B 45 08 83 EC 08 85 C0 74 18");
 	static auto GetFileWeaponInfoFromHandle =
@@ -89,6 +89,15 @@ WeaponInfo *Entity::GetWeaponInfo()
 
 	return GetFileWeaponInfoFromHandle(LookupWeaponInfoSlot(GetClass()));
 #endif
+
+#if defined(CSGO)
+	static auto LookupWeaponInfoSlot =
+		(unsigned short (*)(const char *))util::FindPattern("client", Q"55 8B EC 56 57 8B F9 B8");
+	static auto GetFileWeaponInfoFromHandle =
+		(WeaponInfo *(*)(unsigned short))util::FindPattern("client", Q"66 3B 0D ? ? ? ? 72 2E");
+#endif
+
+	return nullptr;
 }
 
 void Interface::Create(const char *module, const char *name)
@@ -98,12 +107,12 @@ void Interface::Create(const char *module, const char *name)
 
 	char *start = (char *)GetModuleHandle("client");
 
-	int len = strlen(name);
-	int nul = strlen(name) + 3;
+	int len = qstrlen(name);
+	int nul = qstrlen(name) + 3;
 
 	for (;; start++)
 	{
-		if (memcmp(start, name, len) == 0 && *(start + nul) == '\0')
+		if (memeq(start, name, len) && *(start + nul) == '\0')
 			break;
 	}
 
@@ -113,11 +122,14 @@ void Interface::Create(const char *module, const char *name)
 
 void Interface::Link(void *func, int index)
 {
-	char *mem = (char *)func;
+	DWORD oldprotect;
+	VirtualProtect(func, 10, PAGE_EXECUTE_READWRITE, &oldprotect);
 
-	*(mem + 0) = '\xb9';
-	*(mem + 5) = '\xe9';
+	*((char *)func + 0) = '\xb9';
+	*((char *)func + 5) = '\xe9';
 
-	*(void **)(mem + 1) = thisptr;
-	*(int *)(mem + 6)   = (int)(GetMethod<char *>(index) - (mem + 10));
+	*(void **)((char *)func + 1) = thisptr;
+	*(int *)((char *)func + 6)   = (int)(GetMethod<char *>(index) - ((char *)func + 10));
+	
+	VirtualProtect(func, 10, oldprotect, &oldprotect);
 }

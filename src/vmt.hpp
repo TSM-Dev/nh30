@@ -11,8 +11,10 @@ class VMT
 	void	**new_vmt;
 	int		vmtsize;
 
+	VMT(const VMT &);
+
 public:
-	VMT(void *);
+	explicit VMT(void *);
 	~VMT();
 
 	void hook(int i, void *imp, void **org);

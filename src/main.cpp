@@ -1,4 +1,4 @@
-#include "main.h"
+#include "main.hpp"
 
 static bool speedfix[0x1000] = {0};
 
@@ -14,7 +14,6 @@ IEngineVGui *enginevgui;
 ISurface	*surface;
 
 Globals		*globals;
-
 
 void (__thiscall *org_Paint)(void *, int);
 void __thiscall hooked_Paint(void *t, int paintmode)
@@ -94,7 +93,7 @@ void __thiscall hooked_SetViewAngles(void *t, Angle &angles)
 		{
 			if (aimbot::Think(ucmd) && 0)
 			{
-				org_SetViewAngles(t, ucmd->viewangles);
+			//	org_SetViewAngles(t, ucmd->viewangles);
 			}
 		}
 
@@ -105,13 +104,13 @@ void __thiscall hooked_SetViewAngles(void *t, Angle &angles)
 
 		if (canshoot && ucmd->buttons.test(IN_ATTACK))
 		{
-			if (1) // menu/nospread
-				nospread::ApplySpread(ucmd->command_number, lp, ucmd->viewangles, -1.0f);
+			//if (1) // menu/nospread
+			//	nospread::ApplySpread(ucmd->command_number, lp, ucmd->viewangles, -1.0f);
 
 			if (1 && weapon->GetNextPrimaryFire() > curtime) // menu/autopistol
 				ucmd->buttons.del(IN_ATTACK);
 
-			if (0)
+			if (1)
 			{
 				if (weapon->GetNextPrimaryFire() > curtime)
 				{
@@ -119,7 +118,7 @@ void __thiscall hooked_SetViewAngles(void *t, Angle &angles)
 				}
 				else
 				{
-				//	sendpacket = false;
+					sendpacket = false;
 				}
 			}
 
@@ -157,7 +156,6 @@ void __thiscall hooked_RunCommand(void *t, Entity *pl, UserCmd *ucmd, void *move
 	{
 		aimbot::movehelper = movehelper;
 
-
 		if (ucmd && speedfix[ucmd->command_number % sizeof(speedfix)])
 			return aimbot::RunCommand(ucmd);
 	}
@@ -165,38 +163,41 @@ void __thiscall hooked_RunCommand(void *t, Entity *pl, UserCmd *ucmd, void *move
 	org_RunCommand(t, pl, ucmd, movehelper);
 }
 
-void start()
+int __stdcall start(void *instance, int reason, void *data)
 {
+	if (reason != DLL_PROCESS_ATTACH)
+		return 1;
+
 	client = new IClient();
 	dtmgr::Start( );
 
-	dtmgr::SetHook("DT_LocalPlayerExclusive", "m_nTickBase", [] (const RecvProxyData &data, void *t, RecvProxyResult &out)
-	{
-		if (t == LocalPlayer())
-		{
-			static int sim;
+	// dtmgr::SetHook("DT_LocalPlayerExclusive", "m_nTickBase", [] (const RecvProxyData &data, void *t, RecvProxyResult &out)
+	// {
+	// 	if (t == LocalPlayer())
+	// 	{
+	// 		static int keeper;
 
-			out.i32 = data.value.i32 == sim ? ((Entity *)t)->GetTickCount() + 1 : data.value.i32;
-			sim     = data.value.i32;
-		}
-		else
-		{
-			out.i32 = data.value.i32;
-		}
-	});
+	// 		out.i32 = data.value.i32 == keeper ? ((Entity *)t)->GetTickCount() + 1 : data.value.i32;
+	// 		keeper  = data.value.i32;
+	// 	}
+	// 	else
+	// 	{
+	// 		out.i32 = data.value.i32;
+	// 	}
+	// });
 
 #ifdef VORANGEBOX
-#  ifdef GMOD
+# ifdef GMOD
 	globals = **(Globals ***)util::FindPattern(client->GetMethod<void *>(0), 0x100, Q"89 0D .? ? ? ? E8");
-#  else
-#	error OB Globals signature is unknown
-#  endif
+# else
+	#error OB Globals signature is unknown
+# endif
 #else
 	globals = **(Globals ***)util::FindPattern(client->GetMethod<void *>(0), 0x100, Q"A3 .? ? ? ? E8");
 #endif
 
 	engine  = new IEngine;
-
+	
 	ents 	= new IEntities;
 	mdlinfo = new IModelInfo;
 
@@ -209,7 +210,6 @@ void start()
 	enginevgui = new IEngineVGui;
 	ui::Start( );
 
-
 #ifdef VORANGEBOX
 	engine->SetHook(20,     (void *)hooked_SetViewAngles, &org_SetViewAngles);
 	enginevgui->SetHook(13, (void *)hooked_Paint, &org_Paint);
@@ -221,4 +221,12 @@ void start()
 	enginevgui->SetHook(14, (void *)hooked_Paint, &org_Paint);
 	prediction->SetHook(18, (void *)hooked_RunCommand, &org_RunCommand);
 #endif
+
+#ifdef VALIENSWARM
+	engine->SetHook(19,     (void *)hooked_SetViewAngles, &org_SetViewAngles);
+	enginevgui->SetHook(14, (void *)hooked_Paint, &org_Paint);
+	prediction->SetHook(19, (void *)hooked_RunCommand, &org_RunCommand);
+#endif
+
+	return 1;
 }

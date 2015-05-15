@@ -1,4 +1,4 @@
-#include "hud.h"
+#include "hud.hpp"
 
 extern IEngine *engine;
 extern IEntities *ents;
@@ -31,10 +31,10 @@ bool hud::MakeBox(Entity *ent, int &x0, int &y0, int &x1, int &y1)
 	Vector mins = ReadPtr<Vector>(ent, m_Collision + m_vecMins);
 	Vector maxs = ReadPtr<Vector>(ent, m_Collision + m_vecMaxs);
 
-	x0 = maxof(int);
-	y0 = maxof(int);
-	x1 = minof(int);
-	y1 = minof(int);
+	x0 = maxof<int>();
+	y0 = maxof<int>();
+	x1 = minof<int>();
+	y1 = minof<int>();
 
 	for (int i = 0; i < 4; i++)
 	{
@@ -46,10 +46,10 @@ bool hud::MakeBox(Entity *ent, int &x0, int &y0, int &x1, int &y1)
 		if ((vec + (maxs * edges[i].Rotate(ang))).ToScreen(maxs2d) == false)
 			return false;
 
-		x0 = min(x0, min(mins2d.x, maxs2d.x));
-		y0 = min(y0, min(mins2d.y, maxs2d.y));
-		x1 = max(x1, max(mins2d.x, maxs2d.x));
-		y1 = max(y1, max(mins2d.y, maxs2d.y));
+		x0 = Min<int>(x0, Min(mins2d.x, maxs2d.x));
+		y0 = Min<int>(y0, Min(mins2d.y, maxs2d.y));
+		x1 = Max<int>(x1, Max(mins2d.x, maxs2d.x));
+		y1 = Max<int>(y1, Max(mins2d.y, maxs2d.y));
 	}
 
 	return true;
@@ -60,7 +60,7 @@ void hud::DrawESP()
 	surface->SetFont(ui::font_hud);
 	surface->SetTextColor(0xff, 0xff, 0xff, 0xff);
 
-	Entity *lp = LocalPlayer();
+	Entity *lp  = LocalPlayer();
 	int  maxent = globals->maxclients();
 
 	for (int i = 1; i <= ents->GetMaxEntities(); ++i)
@@ -81,14 +81,14 @@ void hud::DrawESP()
 			int x0, y0, x1, y1;
 
 			if (!MakeBox(ent, x0, y0, x1, y1))
-				continue;
+			 	continue;
 
 			surface->SetColor(0x00, 0x00, 0x00, 0x7f);
 			surface->DrawOutlinedRect(x0 - 1, y0 - 1, x1 + 1, y1 + 1);
 			surface->DrawOutlinedRect(x0 + 1, y0 + 1, x1 - 1, y1 - 1);
 
 			if (1) // menu.ESP.health
-				surface->DrawFilledRect(x0 - 4, y0 - 1, x0 - 1, y1 + 1);
+			 	surface->DrawFilledRect(x0 - 4, y0 - 1, x0 - 1, y1 + 1);
 
 #if defined(L4D) || defined(L4D2)
 			switch (ent->GetTeam())
@@ -127,7 +127,7 @@ void hud::DrawESP()
 						surface->SetColor(0x00, 0xff, 0x00, 0xff);
 				}
 
-				surface->DrawFilledRect(x0 - 3, y1 - (int)((y1 - y0) * min((float)ent->GetHealth() / (float)ent->GetMaxHealth(), 1.0f) + 0.5f), x0 - 1, y1);
+				surface->DrawFilledRect(x0 - 3, y1 - Min<int>(y1 - y0, (float)(y1 - y0) * ((float)ent->GetHealth() / (float)ent->GetMaxHealth()) + 0.5f), x0 - 1, y1);
 			}
 
 			if (1) // menu.ESP.name
@@ -135,7 +135,7 @@ void hud::DrawESP()
 				player_info info;
 				engine->GetPlayerInfo(i, info);
 
-				int length;
+				int length = 0;
 				const wchar_t *text = tounicode(info.name, length);
 
 				int tw, th;
@@ -153,13 +153,13 @@ void hud::DrawESP()
 				{
 					const char *classname = weapon->GetClass();
 #ifndef GMOD
-					if (strlen(classname) > 6)
+					if (qstrlen(classname) > 6)
 					{
 						classname += 6;
 					}
 #endif
 
-					int length;
+					int length = 0;
 					const wchar_t *text = util::MakeReadable(classname, length);
 
 					int tw, th;
@@ -176,7 +176,7 @@ void hud::DrawESP()
 		if (1)
 		{
 #if defined(L4D) || defined(L4D2)
-			if (!strcmp(ent->GetNetworkClass()->name, "Infected"))
+			if (streq(ent->GetNetworkClass()->name, "Infected"))
 			{
 				if (!ent->NPC_IsAlive())
 					continue;
@@ -214,7 +214,7 @@ void hud::DrawESP()
 				continue;
 			}
 
-			if (!strcmp(ent->GetNetworkClass()->name, "Witch"))
+			if (streq(ent->GetNetworkClass()->name, "Witch"))
 			{
 				if (!ent->NPC_IsAlive())
 					continue;

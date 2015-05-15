@@ -1,4 +1,4 @@
-#include "util.h"
+#include "util.hpp"
 
 void *util::FindPattern(void *start, unsigned int len, const pattern *data)
 {
@@ -52,14 +52,14 @@ void *util::FindProlog(void *ptr)
 	return nullptr;
 }
 
-void *util::FindString(void *p, const char *string)
+void *util::FindString(void *ptr, const char *string)
 {
 	char *start;
 	char *str = nullptr;
 
-	for (start = (char *)p; !str; start++)
+	for (start = (char *)ptr; str == nullptr; start++)
 	{
-		if (strcmp(start, string) == 0)
+		if (streq(start, string))
 			str = start;
 	}
 
@@ -78,17 +78,17 @@ const wchar_t *util::MakeReadable(const char *s, int &length)
 {
 	static wchar_t buf[64];
 
-	wchar_t *p = buf;
-	bool u = true;
+	wchar_t *p = nullptr;
+	bool u     = true;
 
-	for (; *s; s++)
+	for (p = buf; *s; s++)
 	{
 		if (*s == '_')
 		{
 			if (!u)
 			{
 				u = true;
-				*p++ = ' ';
+				*p++ = L' ';
 			}
 		}
 		else
@@ -105,7 +105,7 @@ const wchar_t *util::MakeReadable(const char *s, int &length)
 		}
 	}
 
-	*p = 0;
+	*p = L'\0';
 	length = p - buf;
 
 	return buf;

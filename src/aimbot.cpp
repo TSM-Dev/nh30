@@ -1,4 +1,4 @@
-#include "aimbot.h"
+#include "aimbot.hpp"
 
 WeaponInfo *aimbot::weaponinfo = 0;
 
@@ -59,11 +59,11 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 #ifdef TF2
 	enginetrace->TraceRay(ray(start, end), 0x0200400b, bf, tr);
 #else
-#  ifdef WALLBANG
+# ifdef WALLBANG
 	if (1) // menu.autowall
-#  endif
+# endif
 	enginetrace->TraceRay(ray(start, end), 0x46004003, bf, tr); // 0x6004003
-#  ifdef WALLBANG
+# ifdef WALLBANG
 	else
 	{
 
@@ -169,7 +169,7 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 		}
 		*/
 	}
-#  endif
+# endif
 #endif
 
 	return tr.fraction == 1.0f;
@@ -202,29 +202,36 @@ void aimbot::Next()
 	next_shot = shot;
 }
 
-float aimbot::RateOf(UserCmd *ucmd, Entity *lp, Entity *pl, int index)
-{
-	// using namespace aimbot;
+// float aimbot::RateOf(UserCmd *ucmd, Entity *lp, Entity *pl, int index)
+// {
+// 	// using namespace aimbot;
 
-	switch (2)
-	{
-	case 0:
-	case 1:
+// 	switch (2)
+// 	{
+// 	case 0:
 
-	case 2:
-		return next_shot < index ? 0.1f : 1.0f;
-	}
+// 	case 1:
+// 		{
+// 			//Vector path;
+// 			//VectorAngles(pl->GetPos() - lp->GetPos(), path);
 
-	//return lp->GetPos().DistTo(pl->GetPos());
+// 			//return path.DistTo(ucmd->viewangles);
+// 		}
+
+// 	case 2:
+// 		return next_shot < index ? 0.1f : 1.0f;
+// 	}
+
+// 	//return lp->GetPos().DistTo(pl->GetPos());
 
 
-	// angular difference
+// 	// angular difference
 
-	//Vector path;
-	//VectorAngles(pl->GetPos() - lp->GetPos(), path);
+// 	//Vector path;
+// 	//VectorAngles(pl->GetPos() - lp->GetPos(), path);
 
-	//return path.DistTo(ucmd->viewangles);
-}
+// 	//return path.DistTo(ucmd->viewangles);
+// }
 
 bool aimbot::Think(UserCmd *ucmd)
 {
@@ -240,8 +247,15 @@ bool aimbot::Think(UserCmd *ucmd)
 	AngleVectors(ucmd->viewangles, aim);
 
 	BulletFilter bf(lp);
+	TargetPicker tp(lp, ucmd);
 
-	for (int i = 1, ignore = engine->GetLocalPlayer(), players = globals->maxclients(); i <= ents->GetMaxEntities(); i++)
+	for (int i = 1, ignore = engine->GetLocalPlayer(), players = globals->maxclients();
+#ifdef NPCS
+		i <= ents->GetMaxEntities();
+#else
+		i <= globals->maxclients();
+#endif
+		i++)
 	{
 		if (i == ignore)
 			continue;
@@ -251,19 +265,11 @@ bool aimbot::Think(UserCmd *ucmd)
 			if (pl->IsDormant())
 				continue;
 
-			if (strcmp(pl->GetNetworkClass()->name, "Infected") && strcmp(pl->GetNetworkClass()->name, "Witch"))
-			{
-				if (i > players)
-					continue;
+			if (i > players)
+				continue;
 
-				if (!CheckTarget(lp, pl))
-					continue;
-			}
-			else
-			{
-				if (!pl->NPC_IsAlive())
-					continue;
-			}
+			if (!CheckTarget(lp, pl))
+				continue;
 
 			if (!pl->GetModel())
 				continue;
@@ -271,7 +277,7 @@ bool aimbot::Think(UserCmd *ucmd)
 			if (!pl->SetupBones())
 				continue;
 
-			float rate = RateOf(ucmd, lp, pl, i);
+			float rate = tp.Compare(i, pl); //RateOf(ucmd, lp, pl, i);
 			if (rate >= best)
 				continue;
 
@@ -304,7 +310,7 @@ bool aimbot::Think(UserCmd *ucmd)
 				}
 			}
 
-			if (!next && 0) // menu.aimbot.hitscan
+			if (!next && 1) // menu.aimbot.hitscan
 			{
 				for (int j = 0; j < pl->Hitboxes(); j++)
 				{
@@ -337,8 +343,8 @@ bool aimbot::Think(UserCmd *ucmd)
 	{
 		VectorAngles(tp - sp, ucmd->viewangles);
 
-		if (1) // menu.aimbot.autoshot
-			ucmd->buttons.add(IN_ATTACK);
+		//if (1) // menu.aimbot.autoshot
+		//	ucmd->buttons.add(IN_ATTACK);
 
 		return true;
 	}

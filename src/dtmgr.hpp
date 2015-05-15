@@ -1,5 +1,5 @@
 #pragma once
-#include "sdk.h"
+#include "sdk.hpp"
 
 struct RecvProp;
 struct RecvTable;

@@ -1,9 +1,9 @@
 #pragma once
-#include "vmt.h"
-#include "util.h"
-#include "main.h"
-#include "vector.h"
-#include "helper.h"
+#include "vmt.hpp"
+#include "util.hpp"
+#include "main.hpp"
+#include "vector.hpp"
+#include "helper.hpp"
 
 #define LocalPlayer() (ents->GetEntity(engine->GetLocalPlayer()))
 
@@ -270,7 +270,7 @@ public:
 	public:
 		inline int operator=(int i)
 		{
-			container = i;
+			return container = i;
 		}
 		inline operator int()
 		{
@@ -406,7 +406,15 @@ public:
 	vfunc(8,1)	void *GetModel();
 
 	vfunc(1,2)	NetworkClass *GetNetworkClass();
+
+# ifdef VALIENSWARM
+	inline bool IsDormant()
+	{
+		return false;
+	}
+# else
 	vfunc(7,2)	bool IsDormant();
+# endif
 #endif
 
 	inline Vector GetShootPos()
@@ -422,8 +430,10 @@ public:
 		if (ReadPtr<bool>(this, m_lifeState))
 			return false;
 
+#if defined(L4D) || defined(L4D2)
 		if (!NPC_IsAlive())
 			return false;
+#endif
 
 		return true;
 	}
@@ -436,14 +446,13 @@ public:
 	}
 
 #if defined(CSS) || defined(CSGO)
-#  ifdef CSS
+# ifdef CSS
 #	define o_spread 371
-#  endif
+# endif
 
-#  ifdef CSGO
-#	define o_spread 459
-#  endif
-
+# ifdef CSGO
+#	define o_spread 478
+# endif
 
 	vfunc(o_spread)   float GetWeaponCone();
 	vfunc(o_spread+1) float GetWeaponSpread();
@@ -454,14 +463,15 @@ public:
 #if defined(L4D) || defined(L4D2)
 	inline float GetWeaponSpread()
 	{
-#  ifdef L4D2
+# ifdef L4D2
 		return ReadPtr<float>(this, 3340);
-#  endif
+# endif
 	}
 #endif
 
 	inline bool NPC_IsAlive()
 	{
+#ifdef NPCS
 		extern int m_Collision;
 		extern int m_nSolidType, m_usSolidFlags;
 
@@ -471,10 +481,13 @@ public:
 		if ((ReadPtr<short>(this, m_Collision + m_usSolidFlags) & 4) != 0)
 			return false;
 
-		if (memcmp(GetSequence(), "Death", 5) == 0)
+		if (memeq(GetSequence(), "Death", 5))
 			return false;
 
 		return true;
+#else
+		return false;
+#endif
 	}
 
 	inline bool HasFlag(int i)

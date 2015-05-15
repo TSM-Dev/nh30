@@ -1,11 +1,8 @@
 #pragma once
-#include <windows.h>
-#include <math.h>
-
 #include <emmintrin.h>
 #include <xmmintrin.h>
 
-#include <cstring>
+#include <string.h>
 
 /*
 
@@ -26,13 +23,9 @@ cmd->ang.z += deg(atan2f(v3.z,(v3.y * v1.x) - (v3.x * v1.y)));
 
 */
 
-const float pi		= 3.1415926535897932384626433832795f;
-const float pi0p5	= pi * 0.5f;
-
-const float epsilon	= 1.401298e-45f;
-
-#define max(a,b) (((a)>(b))?(a):(b))
-#define min(a,b) (((a)<(b))?(a):(b))
+static const float pi		= 3.1415926535897932384626433832795f;
+static const float pi0p5	= pi * 0.5f;
+static const float epsilon	= 1.401298e-45f;
 
 static void SinCos(const float rad, float &sin, float &cos) // #include <emmintrin.h>, #include <xmmintrin.h>
 {
@@ -60,7 +53,7 @@ static void SinCos(const float rad, float &sin, float &cos) // #include <emmintr
 	const __m128 _mask_sign_raw = _mm_castsi128_ps(_mm_set1_epi32( 0x80000000));
 	const __m128 _mask_sign_inv = _mm_castsi128_ps(_mm_set1_epi32(~0x80000000));
 
-	__m128  mm1,  mm2,  mm3 = _mm_setzero_ps();
+	__m128  mm1,  mm2;
 	__m128i mmi0, mmi2, mmi4;
 
 	__m128 x, y, z;
@@ -118,10 +111,8 @@ static void SinCos(const float rad, float &sin, float &cos) // #include <emmintr
 	y2 = _mm_add_ps(y2, x);
 
 
-	mm3 = poly_mask;
-
-	__m128 sin1y = _mm_andnot_ps(mm3, y1);
-	__m128 sin2y = _mm_and_ps(mm3, y2);
+	__m128 sin1y = _mm_andnot_ps(poly_mask, y1);
+	__m128 sin2y = _mm_and_ps(poly_mask, y2);
 
 
 	mm1 = _mm_add_ps(sin1y, sin2y);
@@ -151,7 +142,7 @@ static float Atan(float y, float x) // #include <emmintrin.h>, #include <xmmintr
 
 	axm = _mm_and_ps(xm, _mask_sign_inv);
 	aym = _mm_and_ps(ym, _mask_sign_inv);
-	
+
 	mm1 = _mm_min_ps(axm, aym);
 	mm2 = _mm_max_ps(axm, aym);
 	mm1 = _mm_div_ps(mm1, mm2);
@@ -164,7 +155,7 @@ static float Atan(float y, float x) // #include <emmintrin.h>, #include <xmmintr
 	mm3 = _mm_mul_ps(mm3, mm2);
 	mm3 = _mm_mul_ps(mm3, mm1);
 	mm3 = _mm_add_ps(mm3, mm1);
-	
+
 	__m128 mask;
 
 	/* |y| > |x| */
@@ -184,7 +175,7 @@ static float Atan(float y, float x) // #include <emmintrin.h>, #include <xmmintr
 	/* y < 0 */
 	mm1 = _mm_and_ps(ym, _mask_sign_raw);
 	mm3 = _mm_xor_ps(mm3, mm1);
-	
+
 	return _mm_cvtss_f32(mm3);
 }
 
@@ -208,6 +199,17 @@ inline float Sqrt(const float &sqr) // #include <xmmintrin.h>
 	return _mm_cvtss_f32(mm1);
 }
 
+template<typename T>
+inline T Min(T x, T y)
+{
+	return x < y ? x : y;
+}
+
+template<typename T>
+inline T Max(T x, T y)
+{
+	return x > y ? x : y;
+}
 
 class Vector
 {

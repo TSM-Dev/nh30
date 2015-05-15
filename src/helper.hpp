@@ -1,9 +1,6 @@
 #pragma once
 #include <wchar.h>
 
-#define minof(t) ((t)(((t)1)<<((sizeof(t)*8)-1)))
-#define maxof(t) ((t)(((unsigned t)-1)>>1))
-
 #define bpaware() register stack *bp asm("ebp")
 
 struct stack
@@ -17,6 +14,17 @@ struct stack
 	}
 };
 
+template<typename T>
+constexpr T minof()
+{
+	return (T)1   << (sizeof(T)*8-1);
+}
+
+template<typename T>
+constexpr T maxof()
+{
+	return ~((T)1 << (sizeof(T)*8-1));
+}
 
 template<typename Fn>
 inline Fn GetVFunc(const void *v, int i)
@@ -42,15 +50,15 @@ inline T *MakePtr(void *base, int o)
 	return (T *)((char *)base + o);
 }
 
-
-inline const wchar_t *tounicode(const char *text, int &length)
+inline
+const wchar_t *tounicode(const char *text, int &length)
 {
-	wchar_t buf[64] = {0};
+	static wchar_t buf[256];
 	wchar_t *p = buf;
 
 	for (; *text;)
 	{
-		register char t = *text++;
+		register unsigned char t = *(unsigned char *)text++;
 
 		if (t < 0x80)
 		{
@@ -63,6 +71,7 @@ inline const wchar_t *tounicode(const char *text, int &length)
 	}
 
 	length = p - buf;
+	*p = L'\0';
 
 	return buf;
 }

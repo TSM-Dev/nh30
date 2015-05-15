@@ -1,4 +1,4 @@
-#include "dtmgr.h"
+#include "dtmgr.hpp"
 
 NetworkClass *dtmgr::nwclass;
 RecvTable   **dtmgr::nwtable;
@@ -42,13 +42,13 @@ int dtmgr::GetOffset(const char *dt, const char *name)
 		if (!table)
 			return 0;
 
-		if (*dt == '*' || strcmp(table->name, dt) == 0)
+		if (*dt == '*' || streq(table->name, dt))
 		{
 			for (int j = 0; j < table->iprops; j++)
 			{
 				RecvProp *prop = &table->props[j];
 
-				if (strcmp(prop->name, name) == 0)
+				if (streq(prop->name, name))
 				{
 					return prop->offset;
 				}
@@ -68,13 +68,13 @@ void dtmgr::SetHook(const char *dt, const char *name, void (*proxyfn)(const Recv
 		if (!table)
 			return;
 
-		if (*dt == '*' || strcmp(table->name, dt) == 0)
+		if (*dt == '*' || streq(table->name, dt))
 		{
 			for (int j = 0; j < table->iprops; j++)
 			{
 				RecvProp *prop = &table->props[j];
 
-				if (strcmp(prop->name, name) == 0)
+				if (streq(prop->name, name))
 				{
 					prop->proxy = (void *)proxyfn;
 				}

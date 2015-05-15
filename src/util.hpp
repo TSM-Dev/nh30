@@ -3,6 +3,8 @@
 #include <string.h>
 #include <windows.h>
 
+#include "qutil.hpp"
+
 class pattern;
 
 namespace util

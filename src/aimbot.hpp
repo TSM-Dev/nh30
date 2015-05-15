@@ -1,6 +1,6 @@
 #pragma once
-#include "sdk.h"
-#include "vector.h"
+#include "sdk.hpp"
+#include "vector.hpp"
 
 struct UserCmd;
 struct hitbox;
@@ -17,13 +17,15 @@ namespace aimbot
 		Entity *lp, *ent;
 
 	public:
-		BulletFilter(Entity *newlp) : lp(newlp)
+		BulletFilter(Entity *entity)
 		{
+			lp  = entity;
+			ent = nullptr;
 		}
 
-		inline void against(Entity *newent)
+		inline void against(Entity *entity)
 		{
-			ent = newent;
+			ent = entity;
 		}
 
 
