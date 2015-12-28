@@ -1,4 +1,4 @@
-Written by Consantine "NanoCat" Shablya.
+Written by Contsantine "NanoCat" Shablya.
 I hereby place this project and its code in the public domain.
 
 Special thanks to
