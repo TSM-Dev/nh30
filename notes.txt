@@ -1,0 +1,29 @@
+// csgay stuff
+
+	vfunc(10)  	Vector &GetPos();
+	
+	vfunc(8,1)  void *GetModel();
+	
+	vfunc(1,2) 	NetworkClass *GetNetworkClass();
+	vfunc(9,2) 	bool IsDormant();
+	vfunc(10,2)	int index();
+
+// l4d stuff
+
+	void RunCommand @ 18
+	void SetupMove(Entity *pl, UserCmd *ucmd, void *movehelper, void *movedata):19
+	void FinishMove(Entity *pl, UserCmd *ucmd, void *movedata):20
+
+	void SetColor(int r, int g, int b, int a):11
+	void DrawFilledRect(int x0, int y0, int x1, int y1):12
+	void DrawOutlinedRect(int x0, int y0, int x1, int y1):14
+
+	void SetFont(unsigned long font):17
+	void SetTextColor(int r, int g, int b, int a):19
+	void SetTextPos(int x, int y):20
+	void DrawText(const wchar_t *text, int length, int drawtype):22
+
+	unsigned long CreateFont():63
+	void SetFontGlyphSet(unsigned long font, const char *name, int tall, int weight, int blur, int scanlines, int flags, int mins, int maxs):64
+
+	void GetTextSize(unsigned long font, const wchar_t *text, int &w, int &h):75

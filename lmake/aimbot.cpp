@@ -24,15 +24,15 @@ void  aimbot::RunCommand(UserCmd *ucmd)
 		return;
 
 #ifdef VORANGEBOX
-	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(17), 0x100, Q"89 ? .? ? ? ? E8");
+	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(17), 0x100, ((const pattern *)"\x02\x41\x00\x00\x00\x89\xE8"));
 #endif
 
 #ifdef VL4D
-	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(18), 0x100, Q"89 ? .? ? ? ? E8");
+	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(18), 0x100, ((const pattern *)"\x02\x41\x00\x00\x00\x89\xE8"));
 #endif
 
 #ifdef VALIENSWARM
-	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(19), 0x100, Q"89 ? .? ? ? ? E8");
+	static int offset = *(int *)util::FindPattern(prediction->GetMethod<void *>(19), 0x100, ((const pattern *)"\x02\x41\x00\x00\x00\x89\xE8"));
 #endif
 
 	Entity *lp = LocalPlayer();
@@ -71,6 +71,103 @@ bool aimbot::BulletTrace(Vector start, Vector end, BulletFilter *bf)
 		//int penetration = weaponinfo->penetration();
 		//float damage    = weaponinfo->
 
+		/*
+		bool __stdcall L4D_CanPenetrate ( Vector vecStart, Vector vecEnd )
+		{
+			float flDamage;
+			float flLength;
+			float flRange;
+			float flRangeModifier;
+			float flTempLength;
+
+
+			int iDamage;
+
+			int iPenetration;
+
+
+			Ray_t ray;
+			trace_t gTr;
+
+
+			trace_t pTr;
+
+
+			Vector tmpVec;
+
+			Vector vecDir;
+			Vector vecSrc;
+
+			vecDir = vecEnd - vecStart;
+
+
+			flLength = VectorLength ( vecDir );
+
+
+			vecDir /= flLength;
+
+
+			g_pAutoWall->m_vecDir = vecDir;
+
+			flDamage = g_pL4DWeaponData->m_fDamage;
+			flRange = g_pL4DWeaponData->m_fRange;
+			flRangeModifier = g_pL4DWeaponData->m_fRangeModifier;
+			iPenetration = g_pL4DWeaponData->m_iPenetration;
+
+
+			VectorCopy ( vecStart, vecSrc );
+
+			while ( iPenetration )
+			{
+				iDamage = ( int )flDamage;
+
+
+				vecEnd = vecSrc + vecDir * flRange;
+
+
+				pTraceLine ( vecSrc, vecEnd, 0x2004003, g_pBaseClient->pBaseEntity, 0, &gTr );
+
+				if ( gTr.fraction != 1.0f )
+				{
+					VectorSubtract ( gTr.endpos, vecStart, tmpVec );
+
+
+					flTempLength = VectorLength ( tmpVec );
+
+
+					if ( flTempLength >= flLength )
+					{
+						if ( iDamage >= 1 )
+							return true;
+					}
+
+
+					iDamage *= pow ( ( float )flRangeModifier, ( float )( flTempLength * 0.002f ) );
+
+
+					if ( iPenetration > 1 )
+					{
+						VectorCopy ( gTr.endpos, g_pAutoWall->m_vecEnd );
+
+
+						if ( !bGetPointContents() )
+							return false;
+
+
+						pTraceLine ( g_pAutoWall->m_vecSrc, gTr.endpos, 0x200400B, g_pBaseClient->pBaseEntity, 0, &pTr );
+
+
+						VectorCopy ( pTr.endpos, vecSrc );
+					}
+				}
+
+
+				iPenetration--;
+			}
+
+			return false;
+		}
+		*/
 	}
 # endif
 #endif
@@ -105,36 +202,29 @@ void aimbot::Next()
 	next_shot = shot;
 }
 
-// float aimbot::RateOf(UserCmd *ucmd, Entity *lp, Entity *pl, int index)
-// {
-// 	// using namespace aimbot;
+float aimbot::RateOf(UserCmd *ucmd, Entity *lp, Entity *pl, int index)
+{
+	// using namespace aimbot;
 
-// 	switch (2)
-// 	{
-// 	case 0:
+	switch (2)
+	{
+	case 0:
+	case 1:
 
-// 	case 1:
-// 		{
-// 			//Vector path;
-// 			//VectorAngles(pl->GetPos() - lp->GetPos(), path);
+	case 2:
+		return next_shot < index ? 0.1f : 1.0f;
+	}
 
-// 			//return path.DistTo(ucmd->viewangles);
-// 		}
-
-// 	case 2:
-// 		return next_shot < index ? 0.1f : 1.0f;
-// 	}
-
-// 	//return lp->GetPos().DistTo(pl->GetPos());
+	//return lp->GetPos().DistTo(pl->GetPos());
 
 
-// 	// angular difference
+	// angular difference
 
-// 	//Vector path;
-// 	//VectorAngles(pl->GetPos() - lp->GetPos(), path);
+	//Vector path;
+	//VectorAngles(pl->GetPos() - lp->GetPos(), path);
 
-// 	//return path.DistTo(ucmd->viewangles);
-// }
+	//return path.DistTo(ucmd->viewangles);
+}
 
 bool aimbot::Think(UserCmd *ucmd)
 {
@@ -150,7 +240,6 @@ bool aimbot::Think(UserCmd *ucmd)
 	AngleVectors(ucmd->viewangles, aim);
 
 	BulletFilter bf(lp);
-	TargetPicker tp(lp, ucmd);
 
 	for (int i = 1, ignore = engine->GetLocalPlayer(), players = globals->maxclients();
 #ifdef NPCS
@@ -180,7 +269,7 @@ bool aimbot::Think(UserCmd *ucmd)
 			if (!pl->SetupBones())
 				continue;
 
-			float rate = tp.Compare(i, pl); //RateOf(ucmd, lp, pl, i);
+			float rate = RateOf(ucmd, lp, pl, i);
 			if (rate >= best)
 				continue;
 
